@@ -1,0 +1,96 @@
+/* =========================================
+   Estilos del Encabezado (LabOC)
+   ========================================= */
+
+.laboc-header {
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.laboc-title {
+    color: #4f46e5;
+    letter-spacing: -0.5px;
+}
+
+
+.btn-profile-dropdown {
+    border-radius: 50px;
+    border: 1px solid #e2e8f0;
+    padding: 4px 16px 4px 4px;
+    transition: all 0.2s ease;
+}
+
+.btn-profile-dropdown:hover {
+    background-color: #f8fafc;
+    border-color: #cbd5e1;
+}
+
+
+.avatar-sm {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    background-color: #4f46e5;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+.chevron-icon {
+    font-size: 0.8rem;
+}
+
+
+.profile-modal-content {
+    border-radius: 16px;
+    border: none;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+
+.avatar-lg {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    background-color: #4f46e5;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    font-weight: bold;
+    margin: 0 auto 15px auto;
+}
+
+.profile-name {
+    color: #2b3445;
+}
+
+
+.btn-settings {
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    background-color: #ffffff;
+    color: #475569;
+    transition: all 0.2s ease;
+}
+
+.btn-settings:hover {
+    background-color: #f1f5f9;
+    color: #334155;
+}
+
+
+.btn-logout {
+    background-color: #fee2e2;
+    color: #dc2626;
+    border-radius: 8px;
+    border: none;
+    transition: all 0.2s ease;
+}
+
+.btn-logout:hover {
+    background-color: #fecaca;
+    color: #b91c1c;
+}

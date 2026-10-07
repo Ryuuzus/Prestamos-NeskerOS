@@ -1,0 +1,26 @@
+/* Estilos para el formulario de registro */
+
+body {
+    background-color: #f4f7f6; font-family: 'Nunito', sans-serif;
+    height: 100vh; margin: 0; display: flex; align-items: center; justify-content: center;
+}
+.register-container { width: 100%; max-width: 450px; padding: 20px; }
+.register-card { background: #ffffff; border-radius: 12px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); padding: 40px 30px; }
+.register-title { text-align: center; margin-top: 0; margin-bottom: 25px; font-weight: 700; color: #2b3445; }
+.register-form-group { margin-bottom: 15px; }
+.register-label { display: block; font-weight: 600; color: #475569; margin-bottom: 8px; font-size: 0.9rem; }
+.register-input {
+    width: 100%; border-radius: 8px; border: 1px solid #e2e8f0; padding: 10px 14px;
+    font-size: 0.95rem; color: #334155; box-sizing: border-box; background-color: #f8fafc; transition: 0.3s;
+}
+.register-input:focus { border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); background-color: #ffffff; outline: none; }
+.register-btn {
+    width: 100%; background: #4f46e5; color: white; border-radius: 8px;
+    padding: 10px 24px; font-weight: 600; border: none; cursor: pointer; margin-top: 10px; transition: 0.3s;
+}
+.register-btn:hover { background: #4338ca; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3); }
+.register-links { display: flex; justify-content: center; margin-top: 20px; font-size: 0.85rem; }
+.register-links a { color: #4f46e5; text-decoration: none; font-weight: 600; }
+.register-links a:hover { text-decoration: underline; }
+.register-errors { background-color: #fee2e2; color: #dc2626; border: 1px solid #fecaca; border-radius: 8px; padding: 12px 15px; margin-bottom: 20px; font-size: 0.85rem; }
+.register-errors ul { margin: 0; padding-left: 20px; }
