@@ -21,11 +21,22 @@ use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
  */
 class BuildingExport implements FromQuery, WithHeadings, WithMapping, WithEvents
 {
+    /**
+     * Define la consulta Eloquent base para la exportación de los registros de edificios.
+     * 
+     * @return Builder
+     */
     public function query(): Builder    
     {
         return Building::query();
     }
 
+    /**
+     * Mapea y transforma los atributos de cada objeto Building a la estructura de columnas requerida en el Excel.
+     * 
+     * @param mixed $building Instancia del modelo Building.
+     * @return array
+     */
     public function map($building): array
     {
         return [
@@ -37,6 +48,12 @@ class BuildingExport implements FromQuery, WithHeadings, WithMapping, WithEvents
         ];
     }
 
+    /**
+     * Define los nombres de las columnas que aparecerán en la primera fila (encabezados).
+     * Alineados exactamente con las propiedades validadas en BuildingImport.
+     * 
+     * @return array
+     */
     public function headings(): array
     {
         return [
@@ -48,11 +65,16 @@ class BuildingExport implements FromQuery, WithHeadings, WithMapping, WithEvents
         ];
     }
 
+    /**
+     * Registra eventos para personalizar la hoja de cálculo tras su generación,
+     * aplicando estilo en negrita a la fila de encabezados.
+     */
     public function registerEvents(): array
     {
         return [
             AfterSheet::class => function (AfterSheet $event) {
-                $columnRange = 'A1:' . Coordinate::stringFromColumnIndex(count($this->headings())) . '1';
+                $headingCount = count($this->headings());
+                $columnRange = 'A1:' . Coordinate::stringFromColumnIndex($headingCount) . '1';
                 $event->sheet->getDelegate()->getStyle($columnRange)->getFont()->setBold(true);
             },
         ];
