@@ -6,7 +6,7 @@
 --================================================================================================== --}}
 
 {{-- Barra de navegación superior --}}
-<header class="bg-white shadow-sm laboc-header">
+<header class="bg-white shadow-sm neskeros-header">
     <div class="container-fluid px-4 py-3 d-flex justify-content-end align-items-center">
 
         {{-- Menú desplegable con información del usuario autenticado --}}
