@@ -64,12 +64,12 @@
                 </a>
             </li>
 
-            {{-- Módulo: Descargar PDF  VER--}}
-            {{-- <li>
-                <a href="{{ route('pdf.ver', ['reservation' => $reservation->id]) }}" class="nav-link {{ request()->routeIs('pdf.ver') ? 'active' : 'text-white' }}">
+            {{-- Módulo: Descargar PDF --}}
+            <li>
+                <a href="{{ route('pdf.exportar-todas') }}" class="nav-link {{ request()->routeIs('pdf.exportar-todas') ? 'active' : 'text-white' }}">
                     <i class="fa fa-file-pdf fa-fw me-2"></i> PDF
                 </a>
-            </li> --}}
+            </li>
         @endif
 
     </ul>
