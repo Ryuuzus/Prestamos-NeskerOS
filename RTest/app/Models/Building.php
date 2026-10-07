@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * ==================================================================================================
@@ -16,26 +17,20 @@ use Illuminate\Database\Eloquent\Model;
 class Building extends Model
 {
     /**
-     * Cantidad de registros por página por defecto en paginación.
-     *
-     * @var int
-     */
-    protected $perPage = 20;
-
-    /**
      * Atributos asignables de forma masiva.
      *
      * @var array<int, string>
      */
-    protected $fillable = ['name', 'floors'];
+    protected $fillable = [
+        'name',
+        'floors',
+    ];
 
     /**
      * Relación con las aulas pertenecientes a este edificio.
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
-    public function classrooms()
+    public function classrooms(): HasMany
     {
-        return $this->hasMany(\App\Models\Classroom::class, 'buildings_id', 'id');
+        return $this->hasMany(Classroom::class, 'buildings_id', 'id');
     }
 }

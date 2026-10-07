@@ -55,9 +55,6 @@
                         <button type="button" class="btn-create text-nowrap" data-bs-toggle="modal" data-bs-target="#createModal">
                             <i class="fa fa-plus"></i> {{ __('Create') }}
                         </button>
-
-                        {{-- Botón de exportación reservado (deshabilitado por el momento) --}}
-                        {{-- <a href="{{ route('pdf.exportar-todas') }}" class="btn btn-light" style="border-radius: 8px; border: 1px solid #e2e8f0; padding: 8px 14px;" title="Exportar a PDF"></a> --}}
                     </div>
                 </div>
 
@@ -83,15 +80,15 @@
                                     <td>
                                         <form action="{{ route('buildings.destroy', $building->id) }}" method="POST" class="action-btns">
                                             @csrf
-                                            <input type="hidden" name="editing_id" value="{{ $building->id }}">
-                                            
+                                            @method('DELETE')
+
                                             {{-- Botón para detonar el modal de edición --}}
                                             <button type="button" class="btn-action btn-edit" data-bs-toggle="modal" data-bs-target="#editModal{{ $building->id }}">
                                                 <i class="fa fa-fw fa-edit"></i> {{ __('Edit') }}
                                             </button>
-                                            
-                                            @method('DELETE')
-                                            <button type="submit" class="btn-action btn-delete" onclick="event.preventDefault(); confirm('Are you sure to delete?') ? this.closest('form').submit() : false;">
+
+                                            {{-- Botón con confirmación nativa para eliminación --}}
+                                            <button type="submit" class="btn-action btn-delete" onclick="return confirm('{{ __('Are you sure you want to delete this building?') }}')">
                                                 <i class="fa fa-fw fa-trash"></i> {{ __('Delete') }}
                                             </button>
                                         </form>

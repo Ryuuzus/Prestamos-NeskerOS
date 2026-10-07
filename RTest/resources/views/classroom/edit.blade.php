@@ -18,9 +18,12 @@
             </div>
             
             {{-- Formulario con método PATCH para la actualización de datos --}}
-            <form method="POST" action="{{ route('classrooms.update', $classroom->id) }}" role="form" enctype="multipart/form-data">
-                {{ method_field('PATCH') }}
+            <form method="POST" action="{{ route('classrooms.update', $classroom->id) }}">
                 @csrf
+                @method('PATCH')
+                
+                {{-- Identificador de edición para reapertura automática en caso de error de validación --}}
+                <input type="hidden" name="editing_id" value="{{ $classroom->id }}">
                 
                 {{-- Cuerpo del Modal que incluye la vista parcial del formulario --}}
                 <div class="modal-body" style="padding: 30px;">

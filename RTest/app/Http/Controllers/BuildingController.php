@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Building;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use App\Http\Requests\BuildingRequest;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\View\View;
 use App\Exports\BuildingExport;
@@ -17,9 +16,8 @@ use Maatwebsite\Excel\Facades\Excel;
  * DESCRIPCIÓN GENERAL:
  * Controlador de Gestión de Edificios (BuildingController).
  * 
- * Administra las operaciones CRUD para el modelo Building,
- * incluyendo listado con búsqueda y paginación, creación,
- * consulta detallada, edición, eliminación de registros e importación/exportación en Excel/CSV.
+ * Administra las operaciones CRUD para el modelo Building usando Route Model Binding,
+ * filtrado seguro y exportación/importación en Excel.
  * ==================================================================================================
  */
 class BuildingController extends Controller
@@ -31,13 +29,11 @@ class BuildingController extends Controller
     {
         $search = $request->input('search');
 
-        // Filtra la base de datos por nombre si existe un término de búsqueda
         $buildings = Building::when($search, function ($query, $search) {
             return $query->where('name', 'LIKE', "%{$search}%");
         })->paginate(10);
 
-        return view('building.index', compact('buildings'))
-            ->with('i', (request()->input('page', 1) - 1) * $buildings->perPage());
+        return view('building.index', compact('buildings'));
     }
 
     /**
@@ -51,64 +47,60 @@ class BuildingController extends Controller
     }
 
     /**
-     * Almacena un nuevo edificio en la base de datos previa validación.
+     * Almacena un nuevo edificio en la base de datos validando los datos recibidos.
      */
-    public function store(Request $request)
+    public function store(Request $request): RedirectResponse
     {
-        $request->validate([
-            'name' => 'required|string|max:100|unique:buildings,name',
+        $validated = $request->validate([
+            'name'   => 'required|string|max:100|unique:buildings,name',
             'floors' => 'required|integer|min:1',
         ]);
 
-        Building::create($request->all());
+        Building::create($validated);
 
-        return redirect()->route('buildings.index')->with('success', 'Building created successfully.');
+        return redirect()->route('buildings.index')->with('success', 'Edificio creado exitosamente.');
     }
 
     /**
      * Muestra los detalles de un edificio específico.
      */
-    public function show($id): View
+    public function show(Building $building): View
     {
-        $building = Building::find($id);
-
         return view('building.show', compact('building'));
     }
 
     /**
      * Muestra el formulario para editar un edificio existente.
      */
-    public function edit($id): View
+    public function edit(Building $building): View
     {
-        $building = Building::find($id);
-
         return view('building.edit', compact('building'));
     }
 
     /**
-     * Actualiza la información de un edificio en la base de datos previa validación.
+     * Actualiza la información de un edificio en la base de datos.
      */
-    public function update(Request $request, Building $building)
+    public function update(Request $request, Building $building): RedirectResponse
     {
-        $request->validate([
-            'name' => 'required|string|max:100|unique:buildings,name,' . $building->id,
+        $validated = $request->validate([
+            'name'   => 'required|string|max:100|unique:buildings,name,' . $building->id,
             'floors' => 'required|integer|min:1',
         ]);
 
-        $building->update($request->all());
+        $building->update($validated);
 
-        return redirect()->route('buildings.index')->with('success', 'Building updated successfully.');
+        return redirect()->route('buildings.index')->with('success', 'Edificio actualizado exitosamente.');
     }
 
     /**
      * Elimina el edificio especificado de la base de datos.
      */
-    public function destroy($id): RedirectResponse
+    public function destroy(Building $building): RedirectResponse
     {
-        Building::find($id)->delete();
+        $building->delete();
 
         return Redirect::route('buildings.index')
-            ->with('success', 'Building deleted successfully');
+            ->with('success', 'Edificio eliminado exitosamente.');
     }
 
     /**

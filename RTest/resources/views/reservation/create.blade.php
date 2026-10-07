@@ -6,7 +6,6 @@
 --================================================================================================== --}}
 
 @extends('layouts.app')
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
 {{-- Contenido principal de la vista --}}
 @section('content')
@@ -23,7 +22,7 @@
             {{-- Despliegue de errores de validación --}}
             @if ($errors->any())
                 <div class="alert alert-danger">
-                    <ul>
+                    <ul class="mb-0">
                         @foreach ($errors->all() as $error)
                             <li>{{ $error }}</li>
                         @endforeach

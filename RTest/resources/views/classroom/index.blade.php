@@ -93,15 +93,15 @@
                                     {{-- Acciones de edición y eliminación --}}
                                     <td>
                                         <form action="{{ route('classrooms.destroy', $classroom->id) }}" method="POST" class="action-btns">
-                                            
+                                            @csrf
+                                            @method('DELETE')
+
                                             {{-- Botón para abrir modal de edición --}}
                                             <button type="button" class="btn-action btn-edit" data-bs-toggle="modal" data-bs-target="#editModal{{ $classroom->id }}">
                                                 <i class="fa fa-fw fa-edit"></i> {{ __('Edit') }}
                                             </button>
                                             
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn-action btn-delete" onclick="event.preventDefault(); confirm('Are you sure to delete?') ? this.closest('form').submit() : false;">
+                                            <button type="submit" class="btn-action btn-delete" onclick="return confirm('{{ __('Are you sure you want to delete this classroom?') }}')">
                                                 <i class="fa fa-fw fa-trash"></i> {{ __('Delete') }}
                                             </button>
                                         </form>
@@ -125,52 +125,14 @@
     </div>
 </div>
 
-{{-- Carga de pisos según el edificio seleccionado en la creación --}}
-<script>
-document.addEventListener("DOMContentLoaded", function() {
-    const buildingSelect = document.getElementById('create_building_select');
-    const floorSelect = document.getElementById('create_floor_select');
-
-    if (buildingSelect && floorSelect) {
-        buildingSelect.addEventListener('change', function() {
-            floorSelect.innerHTML = '<option value="">-- Select a Floor --</option>';
-            
-            const selectedOption = this.options[this.selectedIndex];
-            
-            if (selectedOption.value) {
-                const maxFloors = parseInt(selectedOption.getAttribute('data-floors'));
-                
-                if(!isNaN(maxFloors)) {
-                    for (let i = 1; i <= maxFloors; i++) {
-                        const option = document.createElement('option');
-                        option.value = i;
-                        option.textContent = i;
-                        floorSelect.appendChild(option);
-                    }
-                }
-            }
-        });
-    }
-});
-</script>
-
 {{-- Modal para crear una nueva aula --}}
 @include('classroom.create', ['classroom' => new \App\Models\Classroom()])
 
-{{-- Reabre el modal de creación si existen errores de validación tras la respuesta del servidor --}}
-@if($errors->any())
-    <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            var myModal = new bootstrap.Modal(document.getElementById('createModal'));
-            myModal.show();
-        });
-    </script>
-@endif
-
-{{-- Función dinámica para poblar y preseleccionar los pisos en selectores dinámicos --}}
+{{-- Lógica JavaScript unificada para poblar pisos dinámicamente y reabrir modales con errores --}}
 <script>
 document.addEventListener("DOMContentLoaded", function() {
     
+    // Función centralizada para popular selectores de pisos según el edificio seleccionado
     function populateFloors(buildingSelect, floorSelect, preselectedFloor = null) {
         if (!buildingSelect || !floorSelect) return;
 
@@ -187,7 +149,6 @@ document.addEventListener("DOMContentLoaded", function() {
                     option.value = i;
                     option.textContent = i;
                     
-
                     if (preselectedFloor && parseInt(preselectedFloor) === i) {
                         option.selected = true;
                     }
@@ -198,7 +159,7 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     }
 
-
+    // Inicializa todos los elementos select de edificios
     const buildingSelects = document.querySelectorAll('.dynamic-building-select');
 
     buildingSelects.forEach(function(buildingSelect) {
@@ -214,6 +175,25 @@ document.addEventListener("DOMContentLoaded", function() {
             });
         }
     });
+
+    // Reapertura automática de modales en caso de errores de validación del servidor
+    @if($errors->any())
+        var editingId = "{{ old('editing_id') }}";
+        
+        if (editingId) {
+            var editModalEl = document.getElementById('editModal' + editingId);
+            if (editModalEl) {
+                var editModal = new bootstrap.Modal(editModalEl);
+                editModal.show();
+            }
+        } else {
+            var createModalEl = document.getElementById('createModal');
+            if (createModalEl) {
+                var createModal = new bootstrap.Modal(createModalEl);
+                createModal.show();
+            }
+        }
+    @endif
 });
 </script>
 

@@ -67,17 +67,19 @@
                         <tr>
                             <td>{{ $reservation->id }}</td>
                             <td>{{ $reservation->user->name ?? 'N/A' }}</td>
-                            <td>{{ $reservation->classroom ? $reservation->classroom->classroom : 'Ninguna' }}</td>
-                            <td>{{ $reservation->device ? $reservation->device->device_name : 'Ninguno' }}</td>
+                            <td>{{ $reservation->classroom->classroom ?? 'Ninguna/Eliminado' }}</td>
+                            <td>{{ $reservation->device->name ??  'Ninguno/Eliminado' }}</td>
                             <td>{{ $reservation->start_time }}</td>
                             <td>{{ $reservation->end_time }}</td>
                             <td>
                                 {{-- Insignias de colores para representar el estado de la reservación --}}
-                                <span class="badge 
-                                    {{ $reservation->status == 'pending' ? 'bg-warning text-dark' : '' }}
-                                    {{ $reservation->status == 'approved' ? 'bg-success' : '' }}
-                                    {{ $reservation->status == 'rejected' ? 'bg-danger' : '' }}
-                                    {{ $reservation->status == 'completed' ? 'bg-info text-dark' : '' }}">
+                                <span @class([
+                                    'badge',
+                                    'bg-warning text-dark' => $reservation->status === 'pending',
+                                    'bg-success'          => $reservation->status === 'approved',
+                                    'bg-danger'           => $reservation->status === 'rejected',
+                                    'bg-info text-dark'    => $reservation->status === 'completed',
+                                ])>
                                     {{ strtoupper($reservation->status) }}
                                 </span>
                             </td>

@@ -89,13 +89,13 @@
                                     <td>
                                         <form action="{{ route('devices.destroy', $device->id) }}" method="POST" class="action-btns">
                                             @csrf
+                                            @method('DELETE')
+
                                             <button type="button" class="btn-action btn-edit" data-bs-toggle="modal" data-bs-target="#editModal{{ $device->id }}">
                                                 <i class="fa fa-fw fa-edit"></i> {{ __('Edit') }}
                                             </button>
-                                            
-                                            <input type="hidden" name="editing_id" value="{{ $device->id }}">
-                                            @method('DELETE')
-                                            <button type="submit" class="btn-action btn-delete" onclick="event.preventDefault(); confirm('Are you sure to delete?') ? this.closest('form').submit() : false;">
+
+                                            <button type="submit" class="btn-action btn-delete" onclick="return confirm('{{ __('Are you sure you want to delete this device?') }}')">
                                                 <i class="fa fa-fw fa-trash"></i> {{ __('Delete') }}
                                             </button>
                                         </form>
@@ -104,7 +104,6 @@
                                 
                                 {{-- Inclusión parcial del modal de edición para cada dispositivo --}}
                                 @include('device.edit')
-                            
                             @endforeach
                         </tbody>
                     </table>
@@ -121,21 +120,26 @@
 </div>
 
 {{-- Inclusión del modal de creación --}}
-@include('device.create', ['device' => new App\Models\Device()])
+@include('device.create', ['device' => new \App\Models\Device()])
 
 {{-- Lógica JS para reabrir automáticamente el modal correspondiente si existen errores de validación --}}
 @if($errors->any())
     <script>
         document.addEventListener("DOMContentLoaded", function() {
-
             var editingId = "{{ old('editing_id') }}";
             
-            if(editingId) {
-                var editModal = new bootstrap.Modal(document.getElementById('editModal' + editingId));
-                editModal.show();
+            if (editingId) {
+                var editModalEl = document.getElementById('editModal' + editingId);
+                if (editModalEl) {
+                    var editModal = new bootstrap.Modal(editModalEl);
+                    editModal.show();
+                }
             } else {
-                var createModal = new bootstrap.Modal(document.getElementById('createModal'));
-                createModal.show();
+                var createModalEl = document.getElementById('createModal');
+                if (createModalEl) {
+                    var createModal = new bootstrap.Modal(createModalEl);
+                    createModal.show();
+                }
             }
         });
     </script>

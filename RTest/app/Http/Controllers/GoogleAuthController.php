@@ -3,20 +3,18 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
-use Illuminate\Http\Request;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Laravel\Socialite\Facades\Socialite;
-use Illuminate\Support\Str;
 
 /**
  * ==================================================================================================
  * DESCRIPCIÓN GENERAL:
  * Controlador de Autenticación con Google (GoogleAuthController).
  * 
- * Gestiona el flujo de autenticación OAuth 2.0 mediante Google Socialite.
- * Incluye la redirección al proveedor, la recepción del callback con la
- * creación/actualización de usuarios, verificación implícita de correo
- * e inicio de sesión en la plataforma.
+ * Gestiona la autenticación mediante Google OAuth 2.0.
+ * Maneja la vinculación segura con cuentas locales existentes por correo
+ * para evitar colisiones de clave única en la base de datos.
  * ==================================================================================================
  */
 class GoogleAuthController extends Controller
@@ -30,34 +28,40 @@ class GoogleAuthController extends Controller
     }
 
     /**
-     * Procesa la respuesta (callback) enviada por Google tras la autenticación.
-     * Crea o actualiza el registro del usuario, verifica su correo e inicia la sesión.
+     * Procesa la respuesta de Google. Vincula o crea la cuenta del usuario,
+     * verifica su correo electrónico e inicia sesión.
      */
-    public function callback()
+    public function callback(): RedirectResponse
     {
         $googleUser = Socialite::driver('google')->user();
-    
-        // Busca al usuario por su ID de Google o registra/actualiza sus datos
-        $user = User::updateOrCreate([
-            'google_id' => $googleUser->id,
-        ], [
-            'name' => $googleUser->name,
-            'email' => $googleUser->email,
-            'google_token' => $googleUser->token,
-            'google_refresh_token' => $googleUser->refreshToken,
-        ]);
 
-        // Autentica al usuario en el sistema
+        // Busca al usuario primero por id de google, o por su dirección de correo si ya existía
+        $user = User::where('google_id', $googleUser->id)
+                    ->orWhere('email', $googleUser->email)
+                    ->first();
+
+        if ($user) {
+            $user->update([
+                'google_id'            => $googleUser->id,
+                'google_token'         => $googleUser->token,
+                'google_refresh_token' => $googleUser->refreshToken,
+            ]);
+        } else {
+            $user = User::create([
+                'name'                 => $googleUser->name,
+                'email'                => $googleUser->email,
+                'google_id'            => $googleUser->id,
+                'google_token'         => $googleUser->token,
+                'google_refresh_token' => $googleUser->refreshToken,
+            ]);
+        }
+
+        // Autentica al usuario en la sesión activa
         Auth::login($user);
 
-        // Marca la dirección de correo como verificada si aún no lo está
+        // Verifica el correo si aún no lo estaba
         if (!$user->hasVerifiedEmail()) {
             $user->markEmailAsVerified();
-        }
-    
-        // Redirección del usuario a la vista correspondiente
-        if ($user->is_admin == 1) {
-            return redirect()->route('reservations.index');
         }
 
         return redirect()->route('reservations.index');

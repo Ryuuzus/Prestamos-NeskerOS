@@ -18,32 +18,28 @@ use Maatwebsite\Excel\Facades\Excel;
  * DESCRIPCIÓN GENERAL:
  * Controlador de Gestión de Aulas (ClassroomController).
  * 
- * Administra las operaciones CRUD para la entidad Classroom,
- * permitiendo el listado con búsqueda y paginación, la consulta de detalles,
- * la creación, edición, eliminación e importación/exportación masiva de aulas.
+ * Administra las operaciones CRUD de aulas incorporando Eager Loading (with)
+ * para evitar el problema de consultas N+1 y resolviendo modelos de forma implícita.
  * ==================================================================================================
  */
 class ClassroomController extends Controller
 {
     /**
-     * Muestra el listado de aulas con soporte para búsqueda y paginación.
+     * Muestra el listado de aulas con precarga de relaciones (Eager Loading), búsqueda y paginación.
      */
-    public function index(Request $request)
+    public function index(Request $request): View
     {
         $search = $request->input('search');
 
-        // Búsqueda condicional sobre el campo de identificación del aula
-        $classrooms = Classroom::when($search, function ($query, $search) {
-            $query->where(function ($q) use ($search) {
-                $q->where('classroom', 'LIKE', "%{$search}%");
-            });
-        })->paginate(10);
+        // Se incluye eager loading (with('building')) para optimizar el rendimiento de la consulta SQL
+        $classrooms = Classroom::with('building')
+            ->when($search, function ($query, $search) {
+                $query->where('classroom', 'LIKE', "%{$search}%");
+            })->paginate(10);
 
-        // Obtención de edificios para asociar o filtrar en la vista principal
         $buildings = Building::all();
 
-        return view('classroom.index', compact('classrooms', 'buildings'))
-            ->with('i', ($request->input('page', 1) - 1) * $classrooms->perPage());
+        return view('classroom.index', compact('classrooms', 'buildings'));
     }
 
     /**
@@ -65,25 +61,22 @@ class ClassroomController extends Controller
         Classroom::create($request->validated());
 
         return Redirect::route('classrooms.index')
-            ->with('success', 'Classroom created successfully.');
+            ->with('success', 'Aula creada exitosamente.');
     }
 
     /**
-     * Muestra la información detallada de una aula específica.
+     * Muestra la información detallada de un aula específica.
      */
-    public function show($id): View
+    public function show(Classroom $classroom): View
     {
-        $classroom = Classroom::find($id);
-
         return view('classroom.show', compact('classroom'));
     }
 
     /**
      * Muestra el formulario para editar un aula existente.
      */
-    public function edit($id): View
+    public function edit(Classroom $classroom): View
     {
-        $classroom = Classroom::find($id);
         $buildings = Building::all();
 
         return view('classroom.edit', compact('classroom', 'buildings'));
@@ -97,18 +90,18 @@ class ClassroomController extends Controller
         $classroom->update($request->validated());
 
         return Redirect::route('classrooms.index')
-            ->with('success', 'Classroom updated successfully');
+            ->with('success', 'Aula actualizada exitosamente.');
     }
 
     /**
      * Elimina el registro del aula indicada de la base de datos.
      */
-    public function destroy($id): RedirectResponse
+    public function destroy(Classroom $classroom): RedirectResponse
     {
-        Classroom::find($id)->delete();
+        $classroom->delete();
 
         return Redirect::route('classrooms.index')
-            ->with('success', 'Classroom deleted successfully');
+            ->with('success', 'Aula eliminada exitosamente.');
     }
 
     /**

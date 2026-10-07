@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * ==================================================================================================
@@ -28,35 +29,44 @@ class Reservation extends Model
         'end_time',
         'status',
         'rejection_reason',
-        'actual_return_time'
+        'actual_return_time',
     ];
 
     /**
-     * Relación con el usuario solicitante de la reservación.
+     * Define las conversiones de tipo para los atributos especificados.
+     * Convierte automáticamente los campos de fecha/hora en objetos Carbon.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     * @return array<string, string>
      */
-    public function user()
+    protected function casts(): array
+    {
+        return [
+            'start_time'          => 'datetime',
+            'end_time'            => 'datetime',
+            'actual_return_time'  => 'datetime',
+        ];
+    }
+
+    /**
+     * Relación con el usuario solicitante de la reservación.
+     */
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
     /**
      * Relación con el aula reservada (si aplica).
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
-    public function classroom()
+    public function classroom(): BelongsTo
     {
         return $this->belongsTo(Classroom::class);
     }
 
     /**
      * Relación con el dispositivo reservado (si aplica).
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
-    public function device()
+    public function device(): BelongsTo
     {
         return $this->belongsTo(Device::class);
     }

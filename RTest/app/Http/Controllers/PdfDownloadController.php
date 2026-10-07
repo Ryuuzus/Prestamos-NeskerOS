@@ -6,27 +6,32 @@ use App\Models\Reservation;
 use Illuminate\Support\Carbon;
 use Spatie\LaravelPdf\Facades\Pdf;
 use Spatie\LaravelPdf\PdfBuilder;
+use Illuminate\View\View;
 
 /**
  * ==================================================================================================
  * DESCRIPCIÓN GENERAL:
- * Controlador de Generación y Descarga de PDF (PdfDownload).
- * 
- * Gestiona la renderización en PDF de las solicitudes de reservación individuales
- * y la exportación completa en lote de todas las solicitudes mediante Spatie Laravel PDF.
+ * Controlador de Generación y Descarga de PDF (PdfDownloadController).
  * ==================================================================================================
  */
-class PdfDownload extends Controller
+class PdfDownloadController extends Controller
 {
     /**
      * Genera y descarga el PDF individual para una reservación específica.
      */
-    public function __invoke(Reservation $reservation): PdfBuilder
+    public function index(Reservation $reservation): ?View
     {
-        // Carga de relaciones necesarias para la plantilla del PDF
         $reservation->load(['user', 'classroom.building', 'device']);
 
-        return Pdf::view('PDF.pdfPlantilla', ['reservation' => $reservation])
+        return view('pdf.index', compact('reservation'));
+
+    }
+
+    public function __invoke(Reservation $reservation): PdfBuilder
+    {
+        $reservation->load(['user', 'classroom.building', 'device']);
+
+        return Pdf::view('pdf.index', ['reservation' => $reservation])
             ->format('a4')
             ->download("solicitud-{$reservation->getKey()}.pdf");
     }
@@ -36,7 +41,6 @@ class PdfDownload extends Controller
      */
     public function exportarTodas(): PdfBuilder
     {
-        // Obtención del listado completo con sus relaciones asociadas
         $reservations = Reservation::with(['user', 'classroom.building', 'device'])
             ->latest()
             ->get();

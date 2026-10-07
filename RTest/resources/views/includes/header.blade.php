@@ -7,11 +7,7 @@
 
 {{-- Barra de navegación superior --}}
 <header class="bg-white shadow-sm laboc-header">
-    <div class="container-fluid px-4 py-3 d-flex justify-content-between align-items-center">
-        
-        {{-- Espacio para la marca / logotipo --}}
-        <div class="brand">
-        </div>
+    <div class="container-fluid px-4 py-3 d-flex justify-content-end align-items-center">
 
         {{-- Menú desplegable con información del usuario autenticado --}}
         <div class="user-profile dropdown">
@@ -20,7 +16,7 @@
             <button type="button" class="btn btn-light d-flex align-items-center gap-2 btn-profile-dropdown" data-bs-toggle="dropdown" aria-expanded="false">
                 {{-- Inicial del usuario en tamaño pequeño --}}
                 <div class="avatar-sm">
-                    {{ substr(Auth::user()->name, 0, 1) }}
+                    {{ \Illuminate\Support\Str::substr(Auth::user()->name, 0, 1) }}
                 </div>
                 
                 <span class="fw-semibold text-dark">{{ Auth::user()->name }}</span>
@@ -32,7 +28,7 @@
                 
                 {{-- Avatar ampliado e información del usuario --}}
                 <div class="avatar-lg mx-auto mb-3">
-                    {{ substr(Auth::user()->name, 0, 1) }}
+                    {{ \Illuminate\Support\Str::substr(Auth::user()->name, 0, 1) }}
                 </div>
                 <h5 class="fw-bold mb-1 profile-name">{{ Auth::user()->name }}</h5>
                 <p class="text-muted small mb-4">{{ Auth::user()->email }}</p>

@@ -16,14 +16,14 @@ use Maatwebsite\Excel\Facades\Excel;
  * DESCRIPCIÓN GENERAL:
  * Controlador de Gestión de Dispositivos (DeviceController).
  * 
- * Gestiona el mantenimiento del catálogo de equipos/dispositivos (CRUD),
- * la navegación hacia el centro de importación/exportación y la transferencia masiva de datos.
+ * Gestiona el mantenimiento del catálogo de equipos/dispositivos (CRUD) usando
+ * Route Model Binding estandarizado y transferencia masiva de datos en Excel.
  * ==================================================================================================
  */
 class DeviceController extends Controller
 {
     /**
-     * Muestra la vista principal del módulo Excel para importar/exportar.
+     * Muestra la vista principal del centro de importación/exportación.
      */
     public function home(): View
     {
@@ -42,8 +42,7 @@ class DeviceController extends Controller
                         ->orWhere('serial_number', 'LIKE', "%{$search}%");
         })->paginate(10);
 
-        return view('device.index', compact('devices'))
-            ->with('i', (request()->input('page', 1) - 1) * $devices->perPage());
+        return view('device.index', compact('devices'));
     }
 
     /**
@@ -74,18 +73,16 @@ class DeviceController extends Controller
     /**
      * Muestra la información detallada de un dispositivo específico.
      */
-    public function show($id): View
+    public function show(Device $device): View
     {
-        $device = Device::findOrFail($id);
         return view('device.show', compact('device'));
     }
 
     /**
      * Muestra el formulario para editar un dispositivo existente.
      */
-    public function edit($id): View
+    public function edit(Device $device): View
     {
-        $device = Device::findOrFail($id);
         return view('device.edit', compact('device'));
     }
 
@@ -95,8 +92,8 @@ class DeviceController extends Controller
     public function update(Request $request, Device $device): RedirectResponse
     {
         $validated = $request->validate([
-            'name'          => 'required|string|max:100|unique:devices,name,' . $device->id,
-            'serial_number' => 'required|string|max:15|unique:devices,serial_number,' . $device->id,
+            'name'          => 'required|string|max:100',
+            'serial_number' => 'required|string|max:15|unique:devices,serial_number',
             'status'        => 'required|in:available,maintenance,occupied',
         ]);
 
@@ -108,9 +105,9 @@ class DeviceController extends Controller
     /**
      * Elimina el registro del dispositivo indicado.
      */
-    public function destroy($id): RedirectResponse
+    public function destroy(Device $device): RedirectResponse
     {
-        Device::findOrFail($id)->delete();
+        $device->delete();
 
         return Redirect::route('devices.index')
             ->with('success', 'Dispositivo eliminado exitosamente.');
@@ -129,6 +126,10 @@ class DeviceController extends Controller
      */
     public function import(Request $request): RedirectResponse
     {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,csv,xls|max:2048'
+        ]);
+
         Excel::import(new DeviceImport, $request->file('file'));
 
         return back()->with('success', '¡Dispositivos importados exitosamente!');
