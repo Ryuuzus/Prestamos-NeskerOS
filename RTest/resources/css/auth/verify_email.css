@@ -1,0 +1,89 @@
+/* Estilos para la página de verificación de correo electrónico */
+
+body {
+    background-color: #f4f7f6;
+    font-family: 'Nunito', sans-serif;
+    height: 100vh;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.verify-container {
+    width: 100%;
+    max-width: 450px;
+    padding: 20px;
+}
+
+.verify-card {
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    padding: 40px 30px;
+    text-align: center;
+}
+
+.verify-title {
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-weight: 700;
+    color: #2b3445;
+}
+
+.verify-text {
+    font-size: 0.95rem;
+    color: #475569;
+    margin-bottom: 25px;
+    line-height: 1.5;
+}
+
+.verify-btn {
+    width: 100%;
+    background: #4f46e5;
+    color: white;
+    border-radius: 8px;
+    padding: 10px 24px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: 0.3s;
+    box-sizing: border-box;
+}
+
+.verify-btn:hover {
+    background: #4338ca;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+}
+
+.verify-alert {
+    background-color: #dcfce7;
+    color: #16a34a;
+    border: 1px solid #bbf7d0;
+    border-radius: 8px;
+    padding: 12px 15px;
+    margin-bottom: 20px;
+    font-size: 0.9rem;
+    text-align: left;
+}
+
+.verify-footer {
+    margin-top: 25px;
+    display: flex;
+    justify-content: center;
+}
+
+.verify-logout-btn {
+    background: none;
+    border: none;
+    color: #64748b;
+    font-size: 0.9rem;
+    cursor: pointer;
+    text-decoration: underline;
+    font-family: inherit;
+    padding: 0;
+}
+
+.verify-logout-btn:hover {
+    color: #2b3445;
+}

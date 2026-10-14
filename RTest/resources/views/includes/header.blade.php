@@ -1,0 +1,46 @@
+<!-- Header -->
+
+<header class="bg-white shadow-sm laboc-header">
+    <div class="container-fluid px-4 py-3 d-flex justify-content-between align-items-center">
+        
+        <div class="brand">
+        </div>
+
+        <div class="user-profile dropdown">
+            
+            <button type="button" class="btn btn-light d-flex align-items-center gap-2 btn-profile-dropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                
+                <div class="avatar-sm">
+                    {{ substr(Auth::user()->name, 0, 1) }}
+                </div>
+                
+                <span class="fw-semibold text-dark">{{ Auth::user()->name }}</span>
+                <i class="fa fa-chevron-down text-muted ms-1 chevron-icon"></i>
+            </button>
+
+            <div class="dropdown-menu dropdown-menu-end profile-dropdown-menu p-4 text-center">
+                
+                <div class="avatar-lg mx-auto mb-3">
+                    {{ substr(Auth::user()->name, 0, 1) }}
+                </div>
+                <h5 class="fw-bold mb-1 profile-name">{{ Auth::user()->name }}</h5>
+                <p class="text-muted small mb-4">{{ Auth::user()->email }}</p>
+                
+                <div class="d-grid gap-3">
+                    
+                    
+                    <a href="{{ route('logout') }}" class="btn btn-logout fw-semibold d-flex align-items-center justify-content-center gap-2"
+                       onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                        <i class="fa fa-sign-out-alt"></i> Cerrar Sesión
+                    </a>
+                </div>
+                
+                <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
+                    @csrf
+                </form>
+
+            </div>
+        </div>
+
+    </div>
+</header>
