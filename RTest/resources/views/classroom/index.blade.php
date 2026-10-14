@@ -36,7 +36,11 @@
                         {{-- Formulario de búsqueda --}}
                         <form action="{{ route('classrooms.index') }}" method="GET" class="m-0 d-flex" style="max-width: 300px; width: 100%;">
                             <div class="input-group">
+<<<<<<< HEAD
                                 <input type="text" name="search" class="form-control custom-input" placeholder="Search classrooms..." value="{{ request('search') }}" style="border-top-right-radius: 0; border-bottom-right-radius: 0; height: 100%;">
+=======
+                                <input type="text" name="search" class="form-control custom-input" placeholder="Search..." value="{{ request('search') }}" style="border-top-right-radius: 0; border-bottom-right-radius: 0; height: 100%;">
+>>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
                                 <button type="submit" class="btn-submit" style="border-top-left-radius: 0; border-bottom-left-radius: 0; margin: 0; padding: 8px 16px;">
                                     Buscar
                                 </button>
@@ -93,15 +97,25 @@
                                     {{-- Acciones de edición y eliminación --}}
                                     <td>
                                         <form action="{{ route('classrooms.destroy', $classroom->id) }}" method="POST" class="action-btns">
+<<<<<<< HEAD
                                             
+=======
+                                            @csrf
+                                            @method('DELETE')
+
+>>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
                                             {{-- Botón para abrir modal de edición --}}
                                             <button type="button" class="btn-action btn-edit" data-bs-toggle="modal" data-bs-target="#editModal{{ $classroom->id }}">
                                                 <i class="fa fa-fw fa-edit"></i> {{ __('Edit') }}
                                             </button>
                                             
+<<<<<<< HEAD
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="btn-action btn-delete" onclick="event.preventDefault(); confirm('Are you sure to delete?') ? this.closest('form').submit() : false;">
+=======
+                                            <button type="submit" class="btn-action btn-delete" onclick="return confirm('{{ __('Are you sure you want to delete this classroom?') }}')">
+>>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
                                                 <i class="fa fa-fw fa-trash"></i> {{ __('Delete') }}
                                             </button>
                                         </form>
@@ -125,6 +139,7 @@
     </div>
 </div>
 
+<<<<<<< HEAD
 {{-- Carga de pisos según el edificio seleccionado en la creación --}}
 <script>
 document.addEventListener("DOMContentLoaded", function() {
@@ -171,6 +186,16 @@ document.addEventListener("DOMContentLoaded", function() {
 <script>
 document.addEventListener("DOMContentLoaded", function() {
     
+=======
+{{-- Modal para crear una nueva aula --}}
+@include('classroom.create', ['classroom' => new \App\Models\Classroom()])
+
+{{-- Lógica JavaScript unificada para poblar pisos dinámicamente y reabrir modales con errores --}}
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    
+    // Función centralizada para popular selectores de pisos según el edificio seleccionado
+>>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
     function populateFloors(buildingSelect, floorSelect, preselectedFloor = null) {
         if (!buildingSelect || !floorSelect) return;
 
@@ -187,7 +212,10 @@ document.addEventListener("DOMContentLoaded", function() {
                     option.value = i;
                     option.textContent = i;
                     
+<<<<<<< HEAD
 
+=======
+>>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
                     if (preselectedFloor && parseInt(preselectedFloor) === i) {
                         option.selected = true;
                     }
@@ -198,7 +226,11 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     }
 
+<<<<<<< HEAD
 
+=======
+    // Inicializa todos los elementos select de edificios
+>>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
     const buildingSelects = document.querySelectorAll('.dynamic-building-select');
 
     buildingSelects.forEach(function(buildingSelect) {
@@ -214,7 +246,33 @@ document.addEventListener("DOMContentLoaded", function() {
             });
         }
     });
+<<<<<<< HEAD
 });
 </script>
 
 @endsection
+=======
+
+    // Reapertura automática de modales en caso de errores de validación del servidor
+    @if($errors->any())
+        var editingId = "{{ old('editing_id') }}";
+        
+        if (editingId) {
+            var editModalEl = document.getElementById('editModal' + editingId);
+            if (editModalEl) {
+                var editModal = new bootstrap.Modal(editModalEl);
+                editModal.show();
+            }
+        } else {
+            var createModalEl = document.getElementById('createModal');
+            if (createModalEl) {
+                var createModal = new bootstrap.Modal(createModalEl);
+                createModal.show();
+            }
+        }
+    @endif
+});
+</script>
+
+@endsection
+>>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2

@@ -11,16 +11,29 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content" style="border-radius: 12px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
             
+<<<<<<< HEAD
             {{-- Encabezado del Modal --}}
+=======
+            {{-- Encabezado del Modal con título y botón de cierre --}}
+>>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
             <div class="modal-header" style="border-bottom: 1px solid #f0f2f5; padding: 20px 30px;">
                 <h5 class="modal-title fw-bold" id="editModalLabel{{ $device->id }}" style="color: #2b3445;">{{ __('Update Device') }}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             
             {{-- Formulario de actualización con método PATCH --}}
+<<<<<<< HEAD
             <form method="POST" action="{{ route('devices.update', $device->id) }}" role="form" enctype="multipart/form-data">
                 {{ method_field('PATCH') }}
                 @csrf
+=======
+            <form method="POST" action="{{ route('devices.update', $device->id) }}">
+                @csrf
+                @method('PATCH')
+                
+                {{-- Identificador de edición para reapertura automática en caso de error de validación --}}
+                <input type="hidden" name="editing_id" value="{{ $device->id }}">
+>>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
                 
                 {{-- Cuerpo del Modal que incluye los campos parciales del formulario --}}
                 <div class="modal-body" style="padding: 30px;">
@@ -36,4 +49,8 @@
 
         </div>
     </div>
+<<<<<<< HEAD
 </div>
+=======
+</div>
+>>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2

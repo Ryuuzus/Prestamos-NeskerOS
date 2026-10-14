@@ -1,3 +1,13 @@
+<<<<<<< HEAD
+=======
+{{-- ==================================================================================================
+    DESCRIPCIÓN GENERAL:
+    Vista del formulario de registro de nuevos usuarios (User Registration View).
+    Maneja la captura de datos (Nombre, Email, Contraseña y Confirmación), desplegando una
+    lista de errores de validación si la petición falla al enviar a la ruta 'register'.
+--================================================================================================== --}}
+
+>>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -8,9 +18,18 @@
     @vite(['resources/css/auth/register.css'])
 </head>
 <body>
+<<<<<<< HEAD
     <div class="register-container">
         <div class="register-card">
             <h2 class="register-title">Crear Cuenta</h2>
+=======
+    {{-- Contenedor principal de registro --}}
+    <div class="register-container">
+        <div class="register-card">
+            <h2 class="register-title">Crear Cuenta</h2>
+            
+            {{-- Despliegue de errores de validación del formulario --}}
+>>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
             @if ($errors->any())
                 <div class="register-errors">
                     <ul>
@@ -20,6 +39,11 @@
                     </ul>
                 </div>
             @endif
+<<<<<<< HEAD
+=======
+
+            {{-- Formulario para crear una nueva cuenta --}}
+>>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
             <form action="{{ route('register') }}" method="POST">
                 @csrf
                 <div class="register-form-group">
@@ -40,9 +64,18 @@
                 </div>
                 <button type="submit" class="register-btn">Registrarse</button>
             </form>
+<<<<<<< HEAD
             <div class="register-links">
                 <a href="{{ route('login') }}">¿Ya tienes cuenta? Inicia sesión</a>
             </div>
+=======
+
+            {{-- Enlace para usuarios ya registrados --}}
+            <div class="register-links">
+                <a href="{{ route('login') }}">¿Ya tienes cuenta? Inicia sesión</a>
+            </div>
+
+>>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
         </div>
     </div>
 </body>

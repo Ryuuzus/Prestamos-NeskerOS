@@ -15,9 +15,15 @@ return new class extends Migration
             $table->id();
             
             // Relaciones (Llaves foráneas)
+<<<<<<< HEAD
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->foreignId('classroom_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('device_id')->nullable()->constrained()->nullOnDelete();
+=======
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->foreignId('classroom_id')->nullable()->constrained()->onDelete('set null');
+            $table->foreignId('device_id')->nullable()->constrained()->onDelete('set null');
+>>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
             
             // Fechas de la reservación
             $table->dateTime('start_time');

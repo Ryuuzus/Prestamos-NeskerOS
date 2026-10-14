@@ -18,9 +18,18 @@
             </div>
             
             {{-- Formulario con método PATCH para la actualización de datos --}}
+<<<<<<< HEAD
             <form method="POST" action="{{ route('buildings.update', $building->id) }}" role="form" enctype="multipart/form-data">
                 {{ method_field('PATCH') }}
                 @csrf
+=======
+            <form method="POST" action="{{ route('buildings.update', $building->id) }}">
+                @csrf
+                @method('PATCH')
+                
+                {{-- Identificador de edición para reapertura automática en caso de error de validación --}}
+                <input type="hidden" name="editing_id" value="{{ $building->id }}">
+>>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
                 
                 {{-- Cuerpo del Modal que incluye los campos parciales del formulario --}}
                 <div class="modal-body" style="padding: 30px;">
