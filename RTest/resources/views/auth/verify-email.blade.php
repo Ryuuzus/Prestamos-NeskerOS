@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-=======
 {{-- ==================================================================================================
     DESCRIPCIÓN GENERAL:
     Vista personalizada para la verificación de correo electrónico (Email Verification View).
@@ -7,7 +5,7 @@
     su cuenta, solicitar reenviar el enlace ('verification.send') o cerrar sesión ('logout').
 --================================================================================================== --}}
 
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -18,18 +16,12 @@
     @vite(['resources/css/auth/verify_email.css'])
 </head>
 <body>
-<<<<<<< HEAD
-    <div class="verify-container">
-        <div class="verify-card">
-            
-            <!-- Icono de correo opcional para darle mejor vista -->
-=======
     {{-- Contenedor de verificación de correo --}}
     <div class="verify-container">
         <div class="verify-card">
             
             {{-- Icono descriptivo de correo en formato SVG --}}
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 15px;">
                 <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
                 <polyline points="22,6 12,13 2,6"></polyline>
@@ -41,32 +33,23 @@
                 ¡Gracias por registrarte! Antes de comenzar, por favor verifica tu dirección de correo electrónico haciendo clic en el enlace que te acabamos de enviar.
             </p>
 
-<<<<<<< HEAD
-            <!-- Alerta de éxito cuando se reenvía el correo -->
-=======
             {{-- Alerta informativa tras reenviar la solicitud de correo --}}
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+
             @if (session('status') == 'verification-link-sent')
                 <div class="verify-alert">
                     Se ha enviado un nuevo enlace de verificación a la dirección de correo que proporcionaste durante el registro.
                 </div>
             @endif
 
-<<<<<<< HEAD
-            <!-- Formulario para reenviar el correo de verificación -->
-=======
             {{-- Formulario para solicitar el reenvío del correo de verificación --}}
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+
             <form method="POST" action="{{ route('verification.send') }}">
                 @csrf
                 <button type="submit" class="verify-btn">Reenviar correo de verificación</button>
             </form>
 
-<<<<<<< HEAD
-            <!-- Botón para cerrar sesión por si el usuario ingresó un correo incorrecto y quiere salir -->
-=======
             {{-- Formulario de cierre de sesión --}}
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+
             <div class="verify-footer">
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf

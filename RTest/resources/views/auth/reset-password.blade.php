@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-=======
 {{-- ==================================================================================================
     DESCRIPCIÓN GENERAL:
     Vista para la definición de una nueva contraseña (Reset Password Form).
@@ -7,7 +5,7 @@
     de acceso enviando los datos del correo y la nueva contraseña a 'password.update'.
 --================================================================================================== --}}
 
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -18,18 +16,13 @@
     @vite(['resources/css/auth/reset_password.css'])
 </head>
 <body>
-<<<<<<< HEAD
-    <div class="reset-container">
-        <div class="reset-card">
-            <h2 class="reset-title">Nueva Contraseña</h2>
-=======
     {{-- Contenedor del formulario de restablecimiento --}}
     <div class="reset-container">
         <div class="reset-card">
             <h2 class="reset-title">Nueva Contraseña</h2>
             
             {{-- Visualización de errores de validación --}}
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+
             @if ($errors->any())
                 <div class="reset-errors">
                     <ul>
@@ -39,18 +32,13 @@
                     </ul>
                 </div>
             @endif
-<<<<<<< HEAD
-            <form action="{{ route('password.update') }}" method="POST">
-                @csrf
-                <input type="hidden" value="{{ $request->route('token') }}" name="token">
-=======
 
             {{-- Formulario para actualizar la contraseña con token encriptado --}}
             <form action="{{ route('password.update') }}" method="POST">
                 @csrf
                 <input type="hidden" value="{{ $request->route('token') }}" name="token">
                 
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+
                 <div class="reset-form-group">
                     <label class="reset-label">Correo Electrónico</label>
                     <input type="email" name="email" class="reset-input" value="{{ $request->email }}" required readonly>
@@ -65,10 +53,8 @@
                 </div>
                 <button type="submit" class="reset-btn">Guardar Contraseña</button>
             </form>
-<<<<<<< HEAD
-=======
 
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+
         </div>
     </div>
 </body>

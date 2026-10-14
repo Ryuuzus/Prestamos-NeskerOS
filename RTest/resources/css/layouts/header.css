@@ -1,14 +1,4 @@
 /* =========================================
-<<<<<<< HEAD
-   Estilos del Encabezado (LabOC)
-   ========================================= */
-
-.laboc-header {
-    border-bottom: 1px solid #e2e8f0;
-}
-
-.laboc-title {
-=======
    Estilos del Encabezado (NeskerOs)
    ========================================= */
 
@@ -17,7 +7,7 @@
 }
 
 .neskeros-title {
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+
     color: #4f46e5;
     letter-spacing: -0.5px;
 }

@@ -3,11 +3,6 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-<<<<<<< HEAD
-
-class Reservation extends Model
-{
-=======
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
@@ -26,7 +21,7 @@ class Reservation extends Model
      *
      * @var array<int, string>
      */
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+
     protected $fillable = [
         'user_id',
         'classroom_id',
@@ -35,12 +30,6 @@ class Reservation extends Model
         'end_time',
         'status',
         'rejection_reason',
-<<<<<<< HEAD
-        'actual_return_time'
-    ];
-
-    public function user()
-=======
         'actual_return_time',
     ];
 
@@ -63,32 +52,20 @@ class Reservation extends Model
      * Relación con el usuario solicitante de la reservación.
      */
     public function user(): BelongsTo
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+
     {
         return $this->belongsTo(User::class);
     }
 
-<<<<<<< HEAD
-    // Relación con el aula
-    public function classroom()
-=======
     /**
      * Relación con el aula reservada (si aplica).
      */
     public function classroom(): BelongsTo
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+
     {
         return $this->belongsTo(Classroom::class);
     }
 
-<<<<<<< HEAD
-    // Relación con el dispositivo
-    public function device()
-    {
-        return $this->belongsTo(Device::class);
-    }
-}
-=======
     /**
      * Relación con el dispositivo reservado (si aplica).
      */
@@ -97,4 +74,4 @@ class Reservation extends Model
         return $this->belongsTo(Device::class);
     }
 }
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+

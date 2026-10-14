@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-@extends('layouts.app')
-
-=======
 {{-- ==================================================================================================
     DESCRIPCIÓN GENERAL:
     Vista de confirmación de contraseña (Confirm Password View).
@@ -12,22 +8,12 @@
 @extends('layouts.app')
 
 {{-- Contenido principal de la vista basada en Bootstrap --}}
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+
 @section('content')
 <div class="container">
     <div class="row justify-content-center">
         <div class="col-md-8">
             <div class="card">
-<<<<<<< HEAD
-                <div class="card-header">{{ __('Confirm Password') }}</div>
-
-                <div class="card-body">
-                    {{ __('Please confirm your password before continuing.') }}
-
-                    <form method="POST" action="{{ route('password.confirm') }}">
-                        @csrf
-
-=======
                 
                 {{-- Encabezado de la tarjeta --}}
                 <div class="card-header">{{ __('Confirm Password') }}</div>
@@ -41,7 +27,7 @@
                         @csrf
 
                         {{-- Campo: Contraseña actual --}}
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+
                         <div class="row mb-3">
                             <label for="password" class="col-md-4 col-form-label text-md-end">{{ __('Password') }}</label>
 
@@ -56,10 +42,8 @@
                             </div>
                         </div>
 
-<<<<<<< HEAD
-=======
                         {{-- Botón de envío y enlace auxiliar de contraseña olvidada --}}
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+
                         <div class="row mb-0">
                             <div class="col-md-8 offset-md-4">
                                 <button type="submit" class="btn btn-primary">
@@ -75,16 +59,11 @@
                         </div>
                     </form>
                 </div>
-<<<<<<< HEAD
-=======
 
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+
             </div>
         </div>
     </div>
 </div>
-<<<<<<< HEAD
 @endsection
-=======
-@endsection
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+

@@ -89,15 +89,6 @@
                                     <td>
                                         <form action="{{ route('devices.destroy', $device->id) }}" method="POST" class="action-btns">
                                             @csrf
-<<<<<<< HEAD
-                                            <button type="button" class="btn-action btn-edit" data-bs-toggle="modal" data-bs-target="#editModal{{ $device->id }}">
-                                                <i class="fa fa-fw fa-edit"></i> {{ __('Edit') }}
-                                            </button>
-                                            
-                                            <input type="hidden" name="editing_id" value="{{ $device->id }}">
-                                            @method('DELETE')
-                                            <button type="submit" class="btn-action btn-delete" onclick="event.preventDefault(); confirm('Are you sure to delete?') ? this.closest('form').submit() : false;">
-=======
                                             @method('DELETE')
 
                                             <button type="button" class="btn-action btn-edit" data-bs-toggle="modal" data-bs-target="#editModal{{ $device->id }}">
@@ -105,7 +96,7 @@
                                             </button>
 
                                             <button type="submit" class="btn-action btn-delete" onclick="return confirm('{{ __('Are you sure you want to delete this device?') }}')">
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+
                                                 <i class="fa fa-fw fa-trash"></i> {{ __('Delete') }}
                                             </button>
                                         </form>
@@ -114,10 +105,7 @@
                                 
                                 {{-- Inclusión parcial del modal de edición para cada dispositivo --}}
                                 @include('device.edit')
-<<<<<<< HEAD
-                            
-=======
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+
                             @endforeach
                         </tbody>
                     </table>
@@ -134,27 +122,13 @@
 </div>
 
 {{-- Inclusión del modal de creación --}}
-<<<<<<< HEAD
-@include('device.create', ['device' => new App\Models\Device()])
-=======
 @include('device.create', ['device' => new \App\Models\Device()])
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+
 
 {{-- Lógica JS para reabrir automáticamente el modal correspondiente si existen errores de validación --}}
 @if($errors->any())
     <script>
         document.addEventListener("DOMContentLoaded", function() {
-<<<<<<< HEAD
-
-            var editingId = "{{ old('editing_id') }}";
-            
-            if(editingId) {
-                var editModal = new bootstrap.Modal(document.getElementById('editModal' + editingId));
-                editModal.show();
-            } else {
-                var createModal = new bootstrap.Modal(document.getElementById('createModal'));
-                createModal.show();
-=======
             var editingId = "{{ old('editing_id') }}";
             
             if (editingId) {
@@ -169,14 +143,11 @@
                     var createModal = new bootstrap.Modal(createModalEl);
                     createModal.show();
                 }
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+
             }
         });
     </script>
 @endif
 
-<<<<<<< HEAD
 @endsection
-=======
-@endsection
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+

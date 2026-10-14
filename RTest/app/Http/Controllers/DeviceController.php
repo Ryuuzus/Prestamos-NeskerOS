@@ -11,12 +11,6 @@ use App\Exports\DeviceExport;
 use App\Imports\DeviceImport;
 use Maatwebsite\Excel\Facades\Excel;
 
-<<<<<<< HEAD
-class DeviceController extends Controller
-{
-    /**
-     * Muestra la vista principal del módulo Excel para importar/exportar.
-=======
 /**
  * ==================================================================================================
  * DESCRIPCIÓN GENERAL:
@@ -30,7 +24,7 @@ class DeviceController extends Controller
 {
     /**
      * Muestra la vista principal del centro de importación/exportación.
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+
      */
     public function home(): View
     {
@@ -38,11 +32,8 @@ class DeviceController extends Controller
     }
 
     /**
-<<<<<<< HEAD
-     * Muestra el listado de dispositivos almacenados.
-=======
      * Muestra el listado de dispositivos almacenados con soporte de búsqueda y paginación.
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+
      */
     public function index(Request $request): View
     {
@@ -53,12 +44,8 @@ class DeviceController extends Controller
                         ->orWhere('serial_number', 'LIKE', "%{$search}%");
         })->paginate(10);
 
-<<<<<<< HEAD
-        return view('device.index', compact('devices'))
-            ->with('i', (request()->input('page', 1) - 1) * $devices->perPage());
-=======
         return view('device.index', compact('devices'));
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+
     }
 
     /**
@@ -89,28 +76,18 @@ class DeviceController extends Controller
     /**
      * Muestra la información detallada de un dispositivo específico.
      */
-<<<<<<< HEAD
-    public function show($id): View
-    {
-        $device = Device::findOrFail($id);
-=======
     public function show(Device $device): View
     {
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+
         return view('device.show', compact('device'));
     }
 
     /**
      * Muestra el formulario para editar un dispositivo existente.
      */
-<<<<<<< HEAD
-    public function edit($id): View
-    {
-        $device = Device::findOrFail($id);
-=======
     public function edit(Device $device): View
     {
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+
         return view('device.edit', compact('device'));
     }
 
@@ -120,13 +97,9 @@ class DeviceController extends Controller
     public function update(Request $request, Device $device): RedirectResponse
     {
         $validated = $request->validate([
-<<<<<<< HEAD
-            'name'          => 'required|string|max:100|unique:devices,name,' . $device->id,
-            'serial_number' => 'required|string|max:15|unique:devices,serial_number,' . $device->id,
-=======
             'name'          => 'required|string|max:100',
             'serial_number' => 'required|string|max:15|unique:devices,serial_number',
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+
             'status'        => 'required|in:available,maintenance,occupied',
         ]);
 
@@ -138,26 +111,18 @@ class DeviceController extends Controller
     /**
      * Elimina el registro del dispositivo indicado.
      */
-<<<<<<< HEAD
-    public function destroy($id): RedirectResponse
-    {
-        Device::findOrFail($id)->delete();
-=======
     public function destroy(Device $device): RedirectResponse
     {
         $device->delete();
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+
 
         return Redirect::route('devices.index')
             ->with('success', 'Dispositivo eliminado exitosamente.');
     }
 
     /**
-<<<<<<< HEAD
-     * Exporta los dispositivos a un archivo Excel.
-=======
      * Exporta los dispositivos a un archivo Excel (.xlsx).
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+
      */
     public function export()
     {
@@ -165,13 +130,6 @@ class DeviceController extends Controller
     }
 
     /**
-<<<<<<< HEAD
-     * Importa dispositivos desde un archivo Excel o CSV.
-     */
-    public function import(Request $request): RedirectResponse
-    {
-
-=======
      * Importa dispositivos masivamente desde un archivo Excel o CSV.
      */
     public function import(Request $request): RedirectResponse
@@ -179,14 +137,11 @@ class DeviceController extends Controller
         $request->validate([
             'file' => 'required|mimes:xlsx,csv,xls|max:2048'
         ]);
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+
 
         Excel::import(new DeviceImport, $request->file('file'));
 
         return back()->with('success', '¡Dispositivos importados exitosamente!');
     }
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+

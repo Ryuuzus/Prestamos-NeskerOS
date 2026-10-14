@@ -2,27 +2,12 @@
 
 namespace App\Models;
 
-<<<<<<< HEAD
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Attributes\Hidden;
-=======
-use Illuminate\Contracts\Auth\MustVerifyEmail;
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-<<<<<<< HEAD
-
-class User extends Authenticatable implements MustVerifyEmail
-{
-    /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
-
-=======
 /**
  * ==================================================================================================
  * DESCRIPCIÓN GENERAL:
@@ -41,7 +26,7 @@ class User extends Authenticatable implements MustVerifyEmail
      *
      * @var array<int, string>
      */
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+
     protected $fillable = [
         'name',
         'email',
@@ -51,14 +36,12 @@ class User extends Authenticatable implements MustVerifyEmail
         'google_refresh_token',
     ];
 
-<<<<<<< HEAD
-=======
     /**
      * Atributos ocultos para la serialización del modelo.
      *
      * @var array<int, string>
      */
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+
     protected $hidden = [
         'password',
         'remember_token',
@@ -66,14 +49,9 @@ class User extends Authenticatable implements MustVerifyEmail
         'google_refresh_token',
     ];
 
-<<<<<<< HEAD
-
-    /**
-     * Get the attributes that should be cast.
-=======
     /**
      * Define las conversiones de tipo para los atributos especificados.
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+
      *
      * @return array<string, string>
      */
@@ -81,18 +59,8 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return [
             'email_verified_at' => 'datetime',
-<<<<<<< HEAD
-            'password' => 'hashed',
-        ];
-    }
-
-    public function user()
-    {
-        return $this->belongsTo(Profiles::class);
-    }
-=======
             'password'          => 'hashed',
         ];
     }
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+
 }

@@ -36,11 +36,8 @@
                         {{-- Formulario de búsqueda --}}
                         <form action="{{ route('classrooms.index') }}" method="GET" class="m-0 d-flex" style="max-width: 300px; width: 100%;">
                             <div class="input-group">
-<<<<<<< HEAD
-                                <input type="text" name="search" class="form-control custom-input" placeholder="Search classrooms..." value="{{ request('search') }}" style="border-top-right-radius: 0; border-bottom-right-radius: 0; height: 100%;">
-=======
                                 <input type="text" name="search" class="form-control custom-input" placeholder="Search..." value="{{ request('search') }}" style="border-top-right-radius: 0; border-bottom-right-radius: 0; height: 100%;">
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+
                                 <button type="submit" class="btn-submit" style="border-top-left-radius: 0; border-bottom-left-radius: 0; margin: 0; padding: 8px 16px;">
                                     Buscar
                                 </button>
@@ -97,25 +94,17 @@
                                     {{-- Acciones de edición y eliminación --}}
                                     <td>
                                         <form action="{{ route('classrooms.destroy', $classroom->id) }}" method="POST" class="action-btns">
-<<<<<<< HEAD
-                                            
-=======
                                             @csrf
                                             @method('DELETE')
 
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+
                                             {{-- Botón para abrir modal de edición --}}
                                             <button type="button" class="btn-action btn-edit" data-bs-toggle="modal" data-bs-target="#editModal{{ $classroom->id }}">
                                                 <i class="fa fa-fw fa-edit"></i> {{ __('Edit') }}
                                             </button>
                                             
-<<<<<<< HEAD
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn-action btn-delete" onclick="event.preventDefault(); confirm('Are you sure to delete?') ? this.closest('form').submit() : false;">
-=======
                                             <button type="submit" class="btn-action btn-delete" onclick="return confirm('{{ __('Are you sure you want to delete this classroom?') }}')">
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+
                                                 <i class="fa fa-fw fa-trash"></i> {{ __('Delete') }}
                                             </button>
                                         </form>
@@ -139,54 +128,6 @@
     </div>
 </div>
 
-<<<<<<< HEAD
-{{-- Carga de pisos según el edificio seleccionado en la creación --}}
-<script>
-document.addEventListener("DOMContentLoaded", function() {
-    const buildingSelect = document.getElementById('create_building_select');
-    const floorSelect = document.getElementById('create_floor_select');
-
-    if (buildingSelect && floorSelect) {
-        buildingSelect.addEventListener('change', function() {
-            floorSelect.innerHTML = '<option value="">-- Select a Floor --</option>';
-            
-            const selectedOption = this.options[this.selectedIndex];
-            
-            if (selectedOption.value) {
-                const maxFloors = parseInt(selectedOption.getAttribute('data-floors'));
-                
-                if(!isNaN(maxFloors)) {
-                    for (let i = 1; i <= maxFloors; i++) {
-                        const option = document.createElement('option');
-                        option.value = i;
-                        option.textContent = i;
-                        floorSelect.appendChild(option);
-                    }
-                }
-            }
-        });
-    }
-});
-</script>
-
-{{-- Modal para crear una nueva aula --}}
-@include('classroom.create', ['classroom' => new \App\Models\Classroom()])
-
-{{-- Reabre el modal de creación si existen errores de validación tras la respuesta del servidor --}}
-@if($errors->any())
-    <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            var myModal = new bootstrap.Modal(document.getElementById('createModal'));
-            myModal.show();
-        });
-    </script>
-@endif
-
-{{-- Función dinámica para poblar y preseleccionar los pisos en selectores dinámicos --}}
-<script>
-document.addEventListener("DOMContentLoaded", function() {
-    
-=======
 {{-- Modal para crear una nueva aula --}}
 @include('classroom.create', ['classroom' => new \App\Models\Classroom()])
 
@@ -195,7 +136,7 @@ document.addEventListener("DOMContentLoaded", function() {
 document.addEventListener("DOMContentLoaded", function() {
     
     // Función centralizada para popular selectores de pisos según el edificio seleccionado
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+
     function populateFloors(buildingSelect, floorSelect, preselectedFloor = null) {
         if (!buildingSelect || !floorSelect) return;
 
@@ -212,10 +153,7 @@ document.addEventListener("DOMContentLoaded", function() {
                     option.value = i;
                     option.textContent = i;
                     
-<<<<<<< HEAD
 
-=======
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
                     if (preselectedFloor && parseInt(preselectedFloor) === i) {
                         option.selected = true;
                     }
@@ -226,11 +164,8 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     }
 
-<<<<<<< HEAD
-
-=======
     // Inicializa todos los elementos select de edificios
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+
     const buildingSelects = document.querySelectorAll('.dynamic-building-select');
 
     buildingSelects.forEach(function(buildingSelect) {
@@ -246,12 +181,6 @@ document.addEventListener("DOMContentLoaded", function() {
             });
         }
     });
-<<<<<<< HEAD
-});
-</script>
-
-@endsection
-=======
 
     // Reapertura automática de modales en caso de errores de validación del servidor
     @if($errors->any())
@@ -275,4 +204,4 @@ document.addEventListener("DOMContentLoaded", function() {
 </script>
 
 @endsection
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+

@@ -1,11 +1,3 @@
-<<<<<<< HEAD
-@extends('layouts.app')
-
-@section('content')
-<div class="excel-main-container">
-
-    {{-- Mensajes Globales de Éxito / Error --}}
-=======
 {{-- ==================================================================================================
     DESCRIPCIÓN GENERAL:
     Vista general de importación y exportación de archivos Excel/CSV (Excel Index View).
@@ -20,7 +12,7 @@
 <div class="excel-main-container">
 
     {{-- Notificaciones globales de la sesión (Éxito / Error / Validaciones) --}}
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+
     @if(session('success'))
         <div class="alert alert-success">
             {{ session('success') }}
@@ -43,14 +35,6 @@
         </div>
     @endif
 
-<<<<<<< HEAD
-    <!-- Secciones de Importación / Exportación -->
-    
-    <!-- Dispositivos -->
-    <div class="excel-container">
-        <h2 class="excel-title">Importar y Exportar Dispositivos</h2>
-
-=======
     {{-- =================================================================-----------------------------
         SECCIÓN 1: IMPORTACIÓN Y EXPORTACIÓN DE DISPOSITIVOS
     --------------------------------------------------------------------------------------------------- --}}
@@ -58,7 +42,7 @@
         <h2 class="excel-title">Importar y Exportar Dispositivos</h2>
 
         {{-- Formulario para la subida de archivos de Dispositivos --}}
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+
         <form action="{{ route('devices.import') }}" method="POST" enctype="multipart/form-data" class="excel-form">
             @csrf
             <label>
@@ -71,21 +55,13 @@
             </button>
         </form>
 
-<<<<<<< HEAD
-=======
         {{-- Enlace para exportar la lista de Dispositivos --}}
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+
         <div class="excel-export-wrapper">
             <a href="{{ route('devices.export') }}" class="excel-export-link">Exportar Dispositivos</a>
         </div>
     </div>
 
-<<<<<<< HEAD
-    <!-- Edificios -->
-    <div class="excel-container">
-        <h2 class="excel-title">Importar y Exportar Edificios</h2>
-
-=======
     {{-- =================================================================-----------------------------
         SECCIÓN 2: IMPORTACIÓN Y EXPORTACIÓN DE EDIFICIOS
     --------------------------------------------------------------------------------------------------- --}}
@@ -93,7 +69,7 @@
         <h2 class="excel-title">Importar y Exportar Edificios</h2>
 
         {{-- Formulario para la subida de archivos de Edificios --}}
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+
         <form action="{{ route('buildings.import') }}" method="POST" enctype="multipart/form-data" class="excel-form">
             @csrf
             <label>
@@ -106,21 +82,13 @@
             </button>
         </form>
 
-<<<<<<< HEAD
-=======
         {{-- Enlace para exportar la lista de Edificios --}}
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+
         <div class="excel-export-wrapper">
             <a href="{{ route('buildings.export') }}" class="excel-export-link">Exportar Edificios</a>
         </div>
     </div>
 
-<<<<<<< HEAD
-    <!-- Aulas -->
-    <div class="excel-container">
-        <h2 class="excel-title">Importar y Exportar Aulas</h2>
-
-=======
     {{-- =================================================================-----------------------------
         SECCIÓN 3: IMPORTACIÓN Y EXPORTACIÓN DE AULAS / SALONES
     --------------------------------------------------------------------------------------------------- --}}
@@ -128,7 +96,7 @@
         <h2 class="excel-title">Importar y Exportar Aulas</h2>
 
         {{-- Formulario para la subida de archivos de Aulas --}}
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+
         <form action="{{ route('classrooms.import') }}" method="POST" enctype="multipart/form-data" class="excel-form">
             @csrf
             <label>
@@ -141,10 +109,8 @@
             </button>
         </form>
 
-<<<<<<< HEAD
-=======
         {{-- Enlace para exportar la lista de Aulas --}}
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+
         <div class="excel-export-wrapper">
             <a href="{{ route('classrooms.export') }}" class="excel-export-link">Exportar Aulas</a>
         </div>

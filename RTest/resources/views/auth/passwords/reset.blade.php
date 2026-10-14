@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-@extends('layouts.app')
-
-=======
 {{-- ==================================================================================================
     DESCRIPCIÓN GENERAL:
     Vista basada en Bootstrap para establecer una nueva contraseña (Reset Password Form).
@@ -12,22 +8,12 @@
 @extends('layouts.app')
 
 {{-- Contenido principal de la vista basada en Bootstrap --}}
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+
 @section('content')
 <div class="container">
     <div class="row justify-content-center">
         <div class="col-md-8">
             <div class="card">
-<<<<<<< HEAD
-                <div class="card-header">{{ __('Reset Password') }}</div>
-
-                <div class="card-body">
-                    <form method="POST" action="{{ route('password.update') }}">
-                        @csrf
-
-                        <input type="hidden" name="token" value="{{ $token }}">
-
-=======
                 
                 {{-- Encabezado de la tarjeta --}}
                 <div class="card-header">{{ __('Reset Password') }}</div>
@@ -41,7 +27,7 @@
                         <input type="hidden" name="token" value="{{ $token }}">
 
                         {{-- Campo: Correo electrónico --}}
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+
                         <div class="row mb-3">
                             <label for="email" class="col-md-4 col-form-label text-md-end">{{ __('Email Address') }}</label>
 
@@ -56,10 +42,8 @@
                             </div>
                         </div>
 
-<<<<<<< HEAD
-=======
                         {{-- Campo: Nueva contraseña --}}
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+
                         <div class="row mb-3">
                             <label for="password" class="col-md-4 col-form-label text-md-end">{{ __('Password') }}</label>
 
@@ -74,10 +58,8 @@
                             </div>
                         </div>
 
-<<<<<<< HEAD
-=======
                         {{-- Campo: Confirmar nueva contraseña --}}
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+
                         <div class="row mb-3">
                             <label for="password-confirm" class="col-md-4 col-form-label text-md-end">{{ __('Confirm Password') }}</label>
 
@@ -86,10 +68,8 @@
                             </div>
                         </div>
 
-<<<<<<< HEAD
-=======
                         {{-- Botón para guardar cambios --}}
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+
                         <div class="row mb-0">
                             <div class="col-md-6 offset-md-4">
                                 <button type="submit" class="btn btn-primary">
@@ -99,16 +79,11 @@
                         </div>
                     </form>
                 </div>
-<<<<<<< HEAD
-=======
 
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+
             </div>
         </div>
     </div>
 </div>
-<<<<<<< HEAD
 @endsection
-=======
-@endsection
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+

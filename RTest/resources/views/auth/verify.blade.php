@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-@extends('layouts.app')
-
-=======
 {{-- ==================================================================================================
     DESCRIPCIÓN GENERAL:
     Vista secundaria basada en Bootstrap para la verificación de dirección de correo electrónico.
@@ -12,7 +8,7 @@
 @extends('layouts.app')
 
 {{-- Contenido principal de la vista basada en Bootstrap --}}
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+
 @section('content')
 <div class="container">
     <div class="row justify-content-center">
@@ -21,20 +17,16 @@
                 <div class="card-header">{{ __('Verify Your Email Address') }}</div>
 
                 <div class="card-body">
-<<<<<<< HEAD
-=======
                     {{-- Alerta tras un reenvío exitoso del enlace --}}
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+
                     @if (session('resent'))
                         <div class="alert alert-success" role="alert">
                             {{ __('A fresh verification link has been sent to your email address.') }}
                         </div>
                     @endif
 
-<<<<<<< HEAD
-=======
                     {{-- Mensaje informativo y formulario dinámico para solicitar otro enlace --}}
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+
                     {{ __('Before proceeding, please check your email for a verification link.') }}
                     {{ __('If you did not receive the email') }},
                     <form class="d-inline" method="POST" action="{{ route('verification.resend') }}">
@@ -46,8 +38,5 @@
         </div>
     </div>
 </div>
-<<<<<<< HEAD
 @endsection
-=======
-@endsection
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+

@@ -1,11 +1,3 @@
-<<<<<<< HEAD
-@extends('layouts.app')
-
-@section('content')
-<div class="container mt-4">
-    
-    <!-- Alertas -->
-=======
 {{-- ==================================================================================================
     DESCRIPCIÓN GENERAL:
     Vista principal del módulo de reservaciones (Reservations Index View).
@@ -21,7 +13,7 @@
 <div class="container mt-4">
     
     {{-- Notificaciones de la sesión (Éxito / Error) --}}
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+
     @if(session('success'))
         <div class="custom-alert">
             {{ session('success') }}
@@ -35,21 +27,15 @@
 
     <div class="table-wrapper">
         
-<<<<<<< HEAD
-        <!-- Encabezado -->
-=======
         {{-- Encabezado de la tabla y controles de búsqueda/creación --}}
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+
         <div class="table-header">
             <h4>Listado de Reservaciones</h4>
             
             <div style="display: flex; align-items: center; gap: 15px;">
                 
-<<<<<<< HEAD
-                <!-- Buscador -->
-=======
                 {{-- Formulario de búsqueda rápida --}}
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+
                 <form action="{{ route('reservations.index') }}" method="GET" style="display: flex; margin: 0;">
                     <input type="text" name="search" class="custom-input" placeholder="Search..." value="{{ request('search') }}" style="border-top-right-radius: 0; border-bottom-right-radius: 0; border-right: none; padding-top: 8px; padding-bottom: 8px; max-width: 250px;">
                     <button type="submit" class="btn-submit" style="border-top-left-radius: 0; border-bottom-left-radius: 0; padding: 8px 16px;">
@@ -57,21 +43,16 @@
                     </button>
                 </form>
 
-<<<<<<< HEAD
-                <!-- Botón Crear -->
-=======
                 {{-- Botón para ir a la vista de creación --}}
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+
                 <a href="{{ route('reservations.create') }}" class="btn-create" style="padding: 8px 24px;">
                     Create
                 </a>
             </div>
         </div>
 
-<<<<<<< HEAD
-=======
         {{-- Tabla responsiva de reservaciones --}}
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+
         <div class="table-responsive">
             <table class="custom-table">
                 <thead>
@@ -91,19 +72,6 @@
                         <tr>
                             <td>{{ $reservation->id }}</td>
                             <td>{{ $reservation->user->name ?? 'N/A' }}</td>
-<<<<<<< HEAD
-                            <td>{{ $reservation->classroom ? $reservation->classroom->classroom : 'Ninguna' }}</td>
-                            <td>{{ $reservation->device ? $reservation->device->device_name : 'Ninguno' }}</td>
-                            <td>{{ $reservation->start_time }}</td>
-                            <td>{{ $reservation->end_time }}</td>
-                            <td>
-                                <!-- Badges de colores para el estado -->
-                                <span class="badge 
-                                    {{ $reservation->status == 'pending' ? 'bg-warning text-dark' : '' }}
-                                    {{ $reservation->status == 'approved' ? 'bg-success' : '' }}
-                                    {{ $reservation->status == 'rejected' ? 'bg-danger' : '' }}
-                                    {{ $reservation->status == 'completed' ? 'bg-info text-dark' : '' }}">
-=======
                             <td>{{ $reservation->classroom->classroom ?? 'Ninguna/Eliminado' }}</td>
                             <td>{{ $reservation->device->name ??  'Ninguno/Eliminado' }}</td>
                             <td>{{ $reservation->start_time }}</td>
@@ -117,34 +85,27 @@
                                     'bg-danger'           => $reservation->status === 'rejected',
                                     'bg-info text-dark'    => $reservation->status === 'completed',
                                 ])>
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+
                                     {{ strtoupper($reservation->status) }}
                                 </span>
                             </td>
                             <td>
-<<<<<<< HEAD
-                                <!-- Botones de acción -->
-=======
                                 {{-- Acciones disponibles según el estado de la reservación --}}
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+
                                 <div class="action-btns">
                                     @if($reservation->status === 'pending')
                                         <a href="{{ route('reservations.edit', $reservation->id) }}" class="btn-action btn-edit">Edit</a>
                                         
-<<<<<<< HEAD
-=======
                                         {{-- Formulario para la cancelación / eliminación de la reservación --}}
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+
                                         <form action="{{ route('reservations.destroy', $reservation->id) }}" method="POST" onsubmit="return confirm('¿Seguro que deseas cancelar esta solicitud?');" style="margin: 0;">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="btn-action btn-delete">Delete</button>
                                         </form>
                                     @else
-<<<<<<< HEAD
-=======
                                         {{-- Detalle informativo cuando no se permiten ediciones --}}
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+
                                         <span style="color: #94a3b8; font-size: 0.85rem; font-weight: 500;">
                                             @if($reservation->status === 'rejected')
                                                 <span style="color: #dc2626; display: block; max-width: 200px; white-space: normal;">
@@ -172,11 +133,8 @@
         </div>
     </div>
 
-<<<<<<< HEAD
-    <!-- Paginación -->
-=======
     {{-- Enlaces de paginación dinámica --}}
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+
     <div class="d-flex justify-content-center mt-3">
         {!! $reservations->links() !!}
     </div>

@@ -6,11 +6,8 @@ use App\Http\Controllers\BuildingController;
 use App\Http\Controllers\ClassroomController;
 use App\Http\Controllers\DeviceController;
 use App\Http\Controllers\ReservationController;
-<<<<<<< HEAD
-use App\Http\Controllers\PdfDownload;
-=======
 use App\Http\Controllers\PdfDownloadController;
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+
 
 Route::get('/', function () {
     return redirect()->route('login');
@@ -51,14 +48,10 @@ Route::middleware(['auth', 'admin', 'verified'])->group(function () {
     Route::patch('/reservations/{reservation}/complete', [ReservationController::class, 'complete'])->name('reservations.complete');
 
     // Rutas de PDF
-<<<<<<< HEAD
-    Route::get('/pdf/exportar-todas', [PdfDownload::class, 'exportarTodas'])->name('pdf.exportar-todas');
-    Route::get('/pdf/exportar/{reservation}', [PdfDownload::class, 'exportar'])->name('pdf.exportar');
-=======
     Route::get('/pdf/exportar-todas', [PdfDownloadController::class, 'exportarTodas'])->name('pdf.exportar-todas');
     Route::get('/pdf/exportar/{reservation}', [PdfDownloadController::class, 'exportar'])->name('pdf.exportar');
 
     // Ver la plantilla antes de descargar el PDF
     Route::get('/pdf/ver/{reservation}', [PdfDownloadController::class, 'index'])->name('pdf.ver');
->>>>>>> d68ec3eddcc45d2f309e1556c404069e10607ab2
+
 });
