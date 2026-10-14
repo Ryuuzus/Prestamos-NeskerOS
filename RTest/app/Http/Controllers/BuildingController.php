@@ -33,7 +33,10 @@ class BuildingController extends Controller
 
 
         $buildings = Building::when($search, function ($query, $search) {
-            return $query->where('name', 'LIKE', "%{$search}%");
+            return $query->where(function ($builder) use ($search) {
+                $builder->where('name', 'LIKE', "%{$search}%")
+                    ->orWhere('status', 'LIKE', "%{$search}%");
+            });
         })->paginate(10);
 
         return view('building.index', compact('buildings'));
@@ -55,9 +58,10 @@ class BuildingController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
-        $validated = $request->validate([
+        $validated = $request->validateWithBag('createBuilding', [
             'name'   => 'required|string|max:100|unique:buildings,name',
             'floors' => 'required|integer|min:1',
+            'status' => 'required|in:available,maintenance',
         ]);
 
         Building::create($validated);
@@ -89,9 +93,10 @@ class BuildingController extends Controller
      */
     public function update(Request $request, Building $building): RedirectResponse
     {
-        $validated = $request->validate([
+        $validated = $request->validateWithBag('editBuilding' . $building->id, [
             'name'   => 'required|string|max:100|unique:buildings,name,' . $building->id,
             'floors' => 'required|integer|min:1',
+            'status' => 'required|in:available,maintenance',
         ]);
 
         $building->update($validated);

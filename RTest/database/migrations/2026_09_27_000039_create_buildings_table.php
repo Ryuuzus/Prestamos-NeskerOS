@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('name', 100)->unique();
             $table->integer('floors');
+            $table->enum('status', ['available', 'maintenance'])->default('available');
             $table->timestamps();
         });
     }

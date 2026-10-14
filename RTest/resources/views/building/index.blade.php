@@ -64,21 +64,29 @@
                     <table class="custom-table">
                         <thead>
                             <tr>
-                                <th style="width: 80px;">No</th>
-                                <th>Edificio</th>
-                                <th>Pisos</th>
-                                <th style="width: 280px;">Acciones</th>
+                                <th class="building-id-column">No</th>
+                                <th class="building-name-column">Edificio</th>
+                                <th class="building-floors-column">Pisos</th>
+                                <th class="building-status-column">Estado</th>
+                                <th class="building-actions-column">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach ($buildings as $building)
                                 <tr>
-                                    <td><span class="text-muted fw-bold">{{ $building->id }}</span></td>
-                                    <td class="fw-semibold">{{ $building->name }}</td>
-                                    <td>{{ $building->floors }}</td>
+                                    <td class="building-id-column"><span class="text-muted fw-bold">{{ $building->id }}</span></td>
+                                    <td class="building-name-cell fw-semibold" title="{{ $building->name }}">{{ $building->name }}</td>
+                                    <td class="building-floors-column">{{ $building->floors }}</td>
+                                    <td class="building-status-column">
+                                        @if($building->status === 'available')
+                                            <span class="building-status-badge status-available">Disponible</span>
+                                        @else
+                                            <span class="building-status-badge status-maintenance">Mantenimiento</span>
+                                        @endif
+                                    </td>
                                     
                                     {{-- Acciones de edición (vía modal) y eliminación del registro --}}
-                                    <td>
+                                    <td class="building-actions-column">
                                         <form action="{{ route('buildings.destroy', $building->id) }}" method="POST" class="action-btns">
                                             @csrf
                                             @method('DELETE')
@@ -118,18 +126,23 @@
 {{-- Modal parcial para la creación de un nuevo edificio --}}
 @include('building.create', ['building' => new \App\Models\Building()])
 
-{{-- Script JS para la reapertura automática del modal correspondiente en caso de errores de validación --}}
-@if($errors->any())
+{{-- Reabre únicamente el modal que contiene los errores de validación del CRUD de edificios. --}}
+@php
+    $validationEditingId = old('editing_id');
+    $createBuildingHasErrors = $errors->getBag('createBuilding')->any();
+    $editBuildingHasErrors = $validationEditingId
+        && $errors->getBag('editBuilding' . $validationEditingId)->any();
+@endphp
+
+@if($createBuildingHasErrors || $editBuildingHasErrors)
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            var editingId = "{{ old('editing_id') }}";
-            
-            if(editingId) {
-                var editModal = new bootstrap.Modal(document.getElementById('editModal' + editingId));
-                editModal.show();
-            } else {
-                var createModal = new bootstrap.Modal(document.getElementById('createModal'));
-                createModal.show();
+        document.addEventListener('DOMContentLoaded', function () {
+            const editingId = @json($validationEditingId);
+            const modalId = editingId ? 'editModal' + editingId : 'createModal';
+            const modalElement = document.getElementById(modalId);
+
+            if (modalElement && window.bootstrap) {
+                bootstrap.Modal.getOrCreateInstance(modalElement).show();
             }
         });
     </script>

@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\DeviceRequest;
 use App\Models\Device;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
@@ -15,16 +17,16 @@ use Maatwebsite\Excel\Facades\Excel;
  * ==================================================================================================
  * DESCRIPCIÓN GENERAL:
  * Controlador de Gestión de Dispositivos (DeviceController).
- * 
+ *
  * Gestiona el mantenimiento del catálogo de equipos/dispositivos (CRUD) usando
- * Route Model Binding estandarizado y transferencia masiva de datos en Excel.
+ * Route Model Binding, validación centralizada en DeviceRequest y transferencia
+ * masiva de datos en Excel. La creación y edición se realizan desde modales del index.
  * ==================================================================================================
  */
 class DeviceController extends Controller
 {
     /**
      * Muestra la vista principal del centro de importación/exportación.
-
      */
     public function home(): View
     {
@@ -32,89 +34,90 @@ class DeviceController extends Controller
     }
 
     /**
-     * Muestra el listado de dispositivos almacenados con soporte de búsqueda y paginación.
-
+     * Muestra el listado de dispositivos con búsqueda (nombre o número de serie) y paginación.
      */
     public function index(Request $request): View
     {
-        $search = $request->input('search');
+        $search = trim((string) $request->input('search'));
 
-        $devices = Device::when($search, function ($query, $search) {
-            return $query->where('name', 'LIKE', "%{$search}%")
-                        ->orWhere('serial_number', 'LIKE', "%{$search}%");
-        })->paginate(10);
+        $devices = Device::query()
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'LIKE', "%{$search}%")
+                      ->orWhere('serial_number', 'LIKE', "%{$search}%");
+                });
+            })
+            ->orderBy('id')
+            ->paginate(10);
 
         return view('device.index', compact('devices'));
-
     }
 
     /**
-     * Muestra el formulario para registrar un nuevo dispositivo.
+     * La creación se hace desde el modal del index; esta ruta redirige para evitar
+     * renderizar un parcial (modal) sin layout.
      */
-    public function create(): View
+    public function create(): RedirectResponse
     {
-        $device = new Device();
-        return view('device.create', compact('device'));
+        return Redirect::route('devices.index');
     }
 
     /**
      * Valida y almacena un nuevo dispositivo en la base de datos.
      */
-    public function store(Request $request): RedirectResponse
+    public function store(DeviceRequest $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'name'          => 'required|string|max:100',
-            'serial_number' => 'required|string|max:15|unique:devices,serial_number',
-            'status'        => 'required|in:available,maintenance,occupied',
-        ]);
+        Device::create($request->validated());
 
-        Device::create($validated);
-
-        return redirect()->route('devices.index')->with('success', 'Dispositivo creado exitosamente.');
+        return Redirect::route('devices.index')
+            ->with('success', 'Dispositivo creado exitosamente.');
     }
 
     /**
-     * Muestra la información detallada de un dispositivo específico.
+     * No existe vista de detalle independiente; se regresa al listado.
      */
-    public function show(Device $device): View
+    public function show(Device $device): RedirectResponse
     {
-
-        return view('device.show', compact('device'));
+        return Redirect::route('devices.index');
     }
 
     /**
-     * Muestra el formulario para editar un dispositivo existente.
+     * La edición se hace desde el modal del index; esta ruta redirige al listado.
      */
-    public function edit(Device $device): View
+    public function edit(Device $device): RedirectResponse
     {
-
-        return view('device.edit', compact('device'));
+        return Redirect::route('devices.index');
     }
 
     /**
-     * Valida y actualiza los datos de un dispositivo en la base de datos.
+     * Valida y actualiza los datos de un dispositivo.
+     * El número de serie único ignora al propio dispositivo (ver DeviceRequest).
      */
-    public function update(Request $request, Device $device): RedirectResponse
+    public function update(DeviceRequest $request, Device $device): RedirectResponse
     {
-        $validated = $request->validate([
-            'name'          => 'required|string|max:100',
-            'serial_number' => 'required|string|max:15|unique:devices,serial_number',
+        $device->update($request->validated());
 
-            'status'        => 'required|in:available,maintenance,occupied',
-        ]);
-
-        $device->update($validated);
-
-        return redirect()->route('devices.index')->with('success', 'Dispositivo actualizado exitosamente.');
+        return Redirect::route('devices.index')
+            ->with('success', 'Dispositivo actualizado exitosamente.');
     }
 
     /**
-     * Elimina el registro del dispositivo indicado.
+     * Elimina el dispositivo. Si tiene reservaciones asociadas (llave foránea),
+     * muestra un mensaje claro en lugar de una pantalla de error.
      */
     public function destroy(Device $device): RedirectResponse
     {
-        $device->delete();
+        try {
+            $device->delete();
+        } catch (QueryException $e) {
+            // 23000 = violación de integridad referencial
+            if ($e->getCode() === '23000') {
+                return Redirect::route('devices.index')
+                    ->with('error', 'No se puede eliminar el dispositivo porque tiene reservaciones asociadas.');
+            }
 
+            throw $e;
+        }
 
         return Redirect::route('devices.index')
             ->with('success', 'Dispositivo eliminado exitosamente.');
@@ -122,7 +125,6 @@ class DeviceController extends Controller
 
     /**
      * Exporta los dispositivos a un archivo Excel (.xlsx).
-
      */
     public function export()
     {
@@ -138,10 +140,8 @@ class DeviceController extends Controller
             'file' => 'required|mimes:xlsx,csv,xls|max:2048'
         ]);
 
-
         Excel::import(new DeviceImport, $request->file('file'));
 
         return back()->with('success', '¡Dispositivos importados exitosamente!');
     }
 }
-

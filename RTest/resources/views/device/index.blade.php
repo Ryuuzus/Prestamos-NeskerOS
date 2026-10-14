@@ -1,118 +1,135 @@
 {{-- ==================================================================================================
     DESCRIPCIÓN GENERAL:
-    Vista principal del módulo de Dispositivos (Devices). 
-    Permite visualizar la lista de dispositivos registrados, filtrar resultados mediante la barra de búsqueda,
-    gestionar la paginación y realizar operaciones CRUD mediante modales de creación/edición y acciones directas.
+    Vista principal del módulo de Dispositivos (Devices).
+    Permite visualizar la lista de dispositivos registrados, filtrar resultados mediante la barra de
+    búsqueda, gestionar la paginación y realizar operaciones CRUD mediante modales de creación/edición.
+    El diseño sigue el del CRUD de Edificios (columnas centradas, badges tipo píldora,
+    botones Edit/Delete de texto).
 --================================================================================================== --}}
 
 @extends('layouts.app')
 
-{{-- Definición del título de la sección --}}
 @section('Devices')
     Devices
 @endsection
 
-{{-- Contenido principal de la vista --}}
 @section('content')
 <div class="container-fluid px-4 py-4">
     <div class="row justify-content-center">
         <div class="col-md-12 col-lg-10">
-            
-            {{-- Alerta de éxito al completar operaciones --}}
+
+            {{-- Mensaje de éxito --}}
             @if ($message = Session::get('success'))
                 <div class="custom-alert shadow-sm">
                     <i class="fa fa-check-circle"></i> {{ $message }}
                 </div>
             @endif
 
+            {{-- Mensaje de error (por ejemplo, al eliminar un dispositivo con reservaciones) --}}
+            @if ($message = Session::get('error'))
+                <div class="custom-alert custom-alert-error shadow-sm">
+                    <i class="fa fa-exclamation-circle"></i> {{ $message }}
+                </div>
+            @endif
+
             <div class="table-wrapper">
-                
-                {{-- Encabezado con título de sección, buscador y botón para abrir el Modal de Creación --}}
+
+                {{-- Encabezado: título, buscador y botón Create --}}
                 <div class="table-header d-flex flex-wrap justify-content-between align-items-center gap-3">
                     <h4 id="card_title" class="m-0">{{ __('Dispositivos') }}</h4>
-                    
+
                     <div class="d-flex align-items-center gap-2 flex-grow-1 justify-content-md-end">
-                        
-                        {{-- Formulario de búsqueda --}}
+
                         <form action="{{ route('devices.index') }}" method="GET" class="m-0 d-flex" style="max-width: 300px; width: 100%;">
                             <div class="input-group">
-                                <input type="text" name="search" class="form-control custom-input" placeholder="Search..." value="{{ request('search') }}" style="border-top-right-radius: 0; border-bottom-right-radius: 0; height: 100%;">
-                                <button type="submit" class="btn-submit" style="border-top-left-radius: 0; border-bottom-left-radius: 0; margin: 0; padding: 8px 16px;">
+                                <input type="text" name="search" class="form-control custom-input"
+                                       placeholder="Search..." value="{{ request('search') }}"
+                                       style="border-top-right-radius: 0; border-bottom-right-radius: 0;">
+                                <button type="submit" class="btn-submit"
+                                        style="border-top-left-radius: 0; border-bottom-left-radius: 0; margin: 0; padding: 8px 16px;">
                                     Buscar
                                 </button>
                             </div>
                         </form>
 
-                        {{-- Botón para restablecer el filtro de búsqueda --}}
                         @if(request('search'))
-                            <a href="{{ route('devices.index') }}" class="btn btn-light" style="border-radius: 8px; border: 1px solid #e2e8f0; padding: 8px 14px;" title="Clear Search">
+                            <a href="{{ route('devices.index') }}" class="btn btn-light"
+                               style="border-radius: 8px; border: 1px solid #e2e8f0; padding: 8px 14px;" title="Limpiar búsqueda">
                                 <i class="fa fa-times text-danger"></i>
                             </a>
                         @endif
 
-                        {{-- Botón para detonar el modal de creación --}}
                         <button type="button" class="btn-create text-nowrap" data-bs-toggle="modal" data-bs-target="#createModal">
-                            <i class="fa fa-plus"></i> {{ __('Create') }}
+                            {{ __('Create') }}
                         </button>
                     </div>
                 </div>
 
-                {{-- Tabla de listado de dispositivos --}}
+                {{-- Tabla --}}
+                @php
+                    $statusLabels = [
+                        'available'   => 'Disponible',
+                        'maintenance' => 'Mantenimiento',
+                        'occupied'    => 'Ocupado',
+                    ];
+                @endphp
+
                 <div class="table-responsive">
                     <table class="custom-table">
                         <thead>
                             <tr>
-                                <th style="width: 80px;">No</th>
+                                <th class="building-id-column">No</th>
                                 <th>Dispositivo</th>
                                 <th>Número serial</th>
-                                <th>Estado</th>
-                                <th style="width: 280px;">Acciones</th>
+                                <th class="building-floors-column">Cantidad</th>
+                                <th class="building-status-column">Estado</th>
+                                <th class="building-actions-column">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach ($devices as $device)
+                            @forelse ($devices as $device)
                                 <tr>
-                                    <td><span class="text-muted fw-bold">{{ $device->id }}</span></td>
-                                    <td class="fw-semibold">{{ $device->name }}</td>
-                                    <td>{{ $device->serial_number }}</td>
-                                    
-                                    {{-- Estilo dinámico para la insignia del Estado --}}
-                                    <td>
-                                        @if($device->status == 'available')
-                                            <span class="badge bg-success" style="border-radius: 6px; padding: 6px 10px;">Available</span>
-                                        @else
-                                            <span class="badge bg-warning text-dark" style="border-radius: 6px; padding: 6px 10px;">{{ ucfirst($device->status) }}</span>
-                                        @endif
+                                    <td class="building-id-column"><span class="text-muted fw-bold">{{ $device->id }}</span></td>
+
+                                    <td class="building-name-cell fw-semibold">{{ $device->name }}</td>
+
+                                    <td class="building-name-cell">{{ $device->serial_number }}</td>
+
+                                    <td class="building-floors-column">{{ $device->quantity }}</td>
+
+                                    <td class="building-status-column">
+                                        <span class="building-status-badge status-{{ $device->status }}">
+                                            {{ $statusLabels[$device->status] ?? ucfirst($device->status) }}
+                                        </span>
                                     </td>
-                                    
-                                    {{-- Formulario para eliminación y detonador del modal de edición --}}
-                                    <td>
+
+                                    <td class="building-actions-column">
                                         <form action="{{ route('devices.destroy', $device->id) }}" method="POST" class="action-btns">
                                             @csrf
                                             @method('DELETE')
 
                                             <button type="button" class="btn-action btn-edit" data-bs-toggle="modal" data-bs-target="#editModal{{ $device->id }}">
-                                                <i class="fa fa-fw fa-edit"></i> {{ __('Edit') }}
+                                                {{ __('Edit') }}
                                             </button>
 
-                                            <button type="submit" class="btn-action btn-delete" onclick="return confirm('{{ __('Are you sure you want to delete this device?') }}')">
-
-                                                <i class="fa fa-fw fa-trash"></i> {{ __('Delete') }}
+                                            <button type="submit" class="btn-action btn-delete"
+                                                    onclick="return confirm('{{ __('Are you sure you want to delete this device?') }}')">
+                                                {{ __('Delete') }}
                                             </button>
                                         </form>
                                     </td>
                                 </tr>
-                                
-                                {{-- Inclusión parcial del modal de edición para cada dispositivo --}}
-                                @include('device.edit')
-
-                            @endforeach
+                            @empty
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted py-4">No se encontraron dispositivos.</td>
+                                </tr>
+                            @endforelse
                         </tbody>
                     </table>
                 </div>
             </div>
 
-            {{-- Paginación conservando parámetros de consulta --}}
+            {{-- Paginación conservando la búsqueda --}}
             <div class="d-flex justify-content-end mt-4">
                 {!! $devices->withQueryString()->links() !!}
             </div>
@@ -121,33 +138,25 @@
     </div>
 </div>
 
-{{-- Inclusión del modal de creación --}}
+{{-- Modales de edición: fuera de la tabla (un <div> dentro de <tbody> es HTML inválido) --}}
+@foreach ($devices as $device)
+    @include('device.edit')
+@endforeach
+
+{{-- Modal de creación --}}
 @include('device.create', ['device' => new \App\Models\Device()])
 
-
-{{-- Lógica JS para reabrir automáticamente el modal correspondiente si existen errores de validación --}}
+{{-- Reabre el modal (crear o editar) que tuvo errores de validación --}}
 @if($errors->any())
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            var editingId = "{{ old('editing_id') }}";
-            
-            if (editingId) {
-                var editModalEl = document.getElementById('editModal' + editingId);
-                if (editModalEl) {
-                    var editModal = new bootstrap.Modal(editModalEl);
-                    editModal.show();
-                }
-            } else {
-                var createModalEl = document.getElementById('createModal');
-                if (createModalEl) {
-                    var createModal = new bootstrap.Modal(createModalEl);
-                    createModal.show();
-                }
+        document.addEventListener("DOMContentLoaded", function () {
+            const editingId = @json(old('editing_id'));
+            const modalEl = document.getElementById(editingId ? 'editModal' + editingId : 'createModal');
 
+            if (modalEl) {
+                new bootstrap.Modal(modalEl).show();
             }
         });
     </script>
 @endif
-
 @endsection
-

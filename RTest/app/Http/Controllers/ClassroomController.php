@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Classroom;
 use App\Models\Building;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use App\Http\Requests\ClassroomRequest;
@@ -17,42 +18,44 @@ use Maatwebsite\Excel\Facades\Excel;
  * ==================================================================================================
  * DESCRIPCIÓN GENERAL:
  * Controlador de Gestión de Aulas (ClassroomController).
- * 
+ *
  * Administra las operaciones CRUD de aulas incorporando Eager Loading (with)
  * para evitar el problema de consultas N+1 y resolviendo modelos de forma implícita.
+ * La creación y edición se realizan desde modales dentro de la vista index.
  * ==================================================================================================
-
  */
 class ClassroomController extends Controller
 {
     /**
      * Muestra el listado de aulas con precarga de relaciones (Eager Loading), búsqueda y paginación.
+     * La búsqueda coincide con el nombre del aula o con el nombre de su edificio.
      */
     public function index(Request $request): View
     {
-        $search = $request->input('search');
+        $search = trim((string) $request->input('search'));
 
-        // Se incluye eager loading (with('building')) para optimizar el rendimiento de la consulta SQL
         $classrooms = Classroom::with('building')
-            ->when($search, function ($query, $search) {
-                $query->where('classroom', 'LIKE', "%{$search}%");
-            })->paginate(10);
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('classroom', 'LIKE', "%{$search}%")
+                      ->orWhereHas('building', fn ($b) => $b->where('name', 'LIKE', "%{$search}%"));
+                });
+            })
+            ->orderBy('id')
+            ->paginate(10);
 
-        $buildings = Building::all();
+        $buildings = Building::orderBy('name')->get();
 
         return view('classroom.index', compact('classrooms', 'buildings'));
-
     }
 
     /**
-     * Muestra el formulario para registrar una nueva aula.
+     * La creación se hace desde el modal del index; esta ruta redirige para evitar
+     * renderizar un parcial (modal) sin layout.
      */
-    public function create(): View
+    public function create(): RedirectResponse
     {
-        $classroom = new Classroom();
-        $buildings = Building::all();
-
-        return view('classroom.create', compact('classroom', 'buildings'));
+        return Redirect::route('classrooms.index');
     }
 
     /**
@@ -67,23 +70,19 @@ class ClassroomController extends Controller
     }
 
     /**
-     * Muestra la información detallada de un aula específica.
+     * No existe vista de detalle independiente; se regresa al listado.
      */
-    public function show(Classroom $classroom): View
+    public function show(Classroom $classroom): RedirectResponse
     {
-
-        return view('classroom.show', compact('classroom'));
+        return Redirect::route('classrooms.index');
     }
 
     /**
-     * Muestra el formulario para editar un aula existente.
+     * La edición se hace desde el modal del index; esta ruta redirige al listado.
      */
-    public function edit(Classroom $classroom): View
+    public function edit(Classroom $classroom): RedirectResponse
     {
-
-        $buildings = Building::all();
-
-        return view('classroom.edit', compact('classroom', 'buildings'));
+        return Redirect::route('classrooms.index');
     }
 
     /**
@@ -95,15 +94,25 @@ class ClassroomController extends Controller
 
         return Redirect::route('classrooms.index')
             ->with('success', 'Aula actualizada exitosamente.');
-
     }
 
     /**
-     * Elimina el registro del aula indicada de la base de datos.
+     * Elimina el aula. Si tiene reservaciones asociadas (llave foránea), muestra un
+     * mensaje claro en lugar de una pantalla de error.
      */
     public function destroy(Classroom $classroom): RedirectResponse
     {
-        $classroom->delete();
+        try {
+            $classroom->delete();
+        } catch (QueryException $e) {
+            // 23000 = violación de integridad referencial
+            if ($e->getCode() === '23000') {
+                return Redirect::route('classrooms.index')
+                    ->with('error', 'No se puede eliminar el aula porque tiene reservaciones asociadas.');
+            }
+
+            throw $e;
+        }
 
         return Redirect::route('classrooms.index')
             ->with('success', 'Aula eliminada exitosamente.');
@@ -112,7 +121,6 @@ class ClassroomController extends Controller
     /**
      * Exporta el catálogo de aulas/salones a un archivo Excel (.xlsx).
      */
-
     public function export()
     {
         return Excel::download(new ClassroomExport, 'salones.xlsx');
@@ -120,7 +128,6 @@ class ClassroomController extends Controller
 
     /**
      * Importa aulas masivamente desde un archivo Excel o CSV.
-
      */
     public function import(Request $request): RedirectResponse
     {
