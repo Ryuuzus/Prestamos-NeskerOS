@@ -17,6 +17,8 @@
                 <div class="card-header">{{ __('Verify Your Email Address') }}</div>
 
                 <div class="card-body">
+                    {{-- Mensajes y errores de verificación --}}
+                    @include('auth.partials.feedback')
                     {{-- Alerta tras un reenvío exitoso del enlace --}}
 
                     @if (session('resent'))

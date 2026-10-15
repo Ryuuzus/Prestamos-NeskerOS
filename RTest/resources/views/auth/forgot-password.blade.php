@@ -21,7 +21,11 @@
             
             {{-- Título y descripción instructiva --}}
             <h2 class="forgot-title">Recuperar Acceso</h2>
-            <p class="forgot-subtitle">Ingresa tu correo electrónico y te enviaremos un enlace para restablecer tu contraseña.</p>
+
+            {{-- Mensajes del proceso de autenticación --}}
+            @include('auth.partials.feedback')
+
+            <p class="forgot-subtitle">Ingresa el correo asociado a tu cuenta. Te mostraremos un mensaje cuando se procese la solicitud. Si la cuenta existe, recibirás un enlace para crear una contraseña nueva.</p>
             
             {{-- Formulario para envío del correo de recuperación --}}
             <form action="{{ route('password.email') }}" method="POST">

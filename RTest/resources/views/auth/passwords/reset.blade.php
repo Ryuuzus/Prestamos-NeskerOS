@@ -19,6 +19,8 @@
                 <div class="card-header">{{ __('Reset Password') }}</div>
 
                 <div class="card-body">
+                    {{-- Mensajes del proceso de recuperación de contraseña --}}
+                    @include('auth.partials.feedback')
                     {{-- Formulario para actualización de contraseña con token --}}
                     <form method="POST" action="{{ route('password.update') }}">
                         @csrf

@@ -1,9 +1,9 @@
 {{-- ==================================================================================================
     DESCRIPCIÓN GENERAL:
     Vista principal del módulo de reservaciones (Reservations Index View).
-    Despliega la lista general de reservaciones registradas con buscador por término, filtros de estado
-    mediante insignias visuales (badges), opciones de edición/cancelación de solicitudes en estado 'pending'
-    y paginación dinámica.
+    Despliega la lista general de reservaciones registradas con buscador por término, insignias
+    visuales de estado, opciones de edición/cancelación de solicitudes en estado 'pending'
+    y paginación dinámica. Inicio y fin se muestran combinando fecha + hora (start_at / end_at).
 --================================================================================================== --}}
 
 @extends('layouts.app')
@@ -11,9 +11,8 @@
 {{-- Contenido principal de la vista --}}
 @section('content')
 <div class="container mt-4">
-    
-    {{-- Notificaciones de la sesión (Éxito / Error) --}}
 
+    {{-- Notificaciones de la sesión (Éxito / Error) --}}
     @if(session('success'))
         <div class="custom-alert">
             {{ session('success') }}
@@ -26,16 +25,14 @@
     @endif
 
     <div class="table-wrapper">
-        
-        {{-- Encabezado de la tabla y controles de búsqueda/creación --}}
 
+        {{-- Encabezado de la tabla y controles de búsqueda/creación --}}
         <div class="table-header">
             <h4>Listado de Reservaciones</h4>
-            
-            <div style="display: flex; align-items: center; gap: 15px;">
-                
-                {{-- Formulario de búsqueda rápida --}}
 
+            <div style="display: flex; align-items: center; gap: 15px;">
+
+                {{-- Formulario de búsqueda rápida --}}
                 <form action="{{ route('reservations.index') }}" method="GET" style="display: flex; margin: 0;">
                     <input type="text" name="search" class="custom-input" placeholder="Search..." value="{{ request('search') }}" style="border-top-right-radius: 0; border-bottom-right-radius: 0; border-right: none; padding-top: 8px; padding-bottom: 8px; max-width: 250px;">
                     <button type="submit" class="btn-submit" style="border-top-left-radius: 0; border-bottom-left-radius: 0; padding: 8px 16px;">
@@ -44,7 +41,6 @@
                 </form>
 
                 {{-- Botón para ir a la vista de creación --}}
-
                 <a href="{{ route('reservations.create') }}" class="btn-create" style="padding: 8px 24px;">
                     Create
                 </a>
@@ -52,7 +48,6 @@
         </div>
 
         {{-- Tabla responsiva de reservaciones --}}
-
         <div class="table-responsive">
             <table class="custom-table">
                 <thead>
@@ -73,31 +68,28 @@
                             <td>{{ $reservation->id }}</td>
                             <td>{{ $reservation->user->name ?? 'N/A' }}</td>
                             <td>{{ $reservation->classroom->classroom ?? 'Ninguna/Eliminado' }}</td>
-                            <td>{{ $reservation->device->name ??  'Ninguno/Eliminado' }}</td>
-                            <td>{{ $reservation->start_time }}</td>
-                            <td>{{ $reservation->end_time }}</td>
+                            <td>{{ $reservation->device->name ?? 'Ninguno/Eliminado' }}</td>
+                            <td>{{ $reservation->start_at?->format('d/m/Y H:i') }}</td>
+                            <td>{{ $reservation->end_at?->format('d/m/Y H:i') }}</td>
                             <td>
                                 {{-- Insignias de colores para representar el estado de la reservación --}}
                                 <span @class([
                                     'badge',
                                     'bg-warning text-dark' => $reservation->status === 'pending',
-                                    'bg-success'          => $reservation->status === 'approved',
-                                    'bg-danger'           => $reservation->status === 'rejected',
+                                    'bg-success'           => $reservation->status === 'approved',
+                                    'bg-danger'            => $reservation->status === 'rejected',
                                     'bg-info text-dark'    => $reservation->status === 'completed',
                                 ])>
-
                                     {{ strtoupper($reservation->status) }}
                                 </span>
                             </td>
                             <td>
                                 {{-- Acciones disponibles según el estado de la reservación --}}
-
                                 <div class="action-btns">
                                     @if($reservation->status === 'pending')
                                         <a href="{{ route('reservations.edit', $reservation->id) }}" class="btn-action btn-edit">Edit</a>
-                                        
-                                        {{-- Formulario para la cancelación / eliminación de la reservación --}}
 
+                                        {{-- Formulario para la cancelación / eliminación de la reservación --}}
                                         <form action="{{ route('reservations.destroy', $reservation->id) }}" method="POST" onsubmit="return confirm('¿Seguro que deseas cancelar esta solicitud?');" style="margin: 0;">
                                             @csrf
                                             @method('DELETE')
@@ -105,7 +97,6 @@
                                         </form>
                                     @else
                                         {{-- Detalle informativo cuando no se permiten ediciones --}}
-
                                         <span style="color: #94a3b8; font-size: 0.85rem; font-weight: 500;">
                                             @if($reservation->status === 'rejected')
                                                 <span style="color: #dc2626; display: block; max-width: 200px; white-space: normal;">
@@ -134,7 +125,6 @@
     </div>
 
     {{-- Enlaces de paginación dinámica --}}
-
     <div class="d-flex justify-content-center mt-3">
         {!! $reservations->links() !!}
     </div>

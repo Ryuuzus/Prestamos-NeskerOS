@@ -19,6 +19,9 @@
                 <div class="card-header">{{ __('Confirm Password') }}</div>
 
                 <div class="card-body">
+                    {{-- Mensajes y validaciones de confirmación --}}
+                    @include('auth.partials.feedback')
+
                     {{-- Indicación para el usuario --}}
                     {{ __('Please confirm your password before continuing.') }}
 

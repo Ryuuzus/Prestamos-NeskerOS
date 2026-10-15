@@ -20,18 +20,21 @@
     <div class="login-container">
         <div class="login-card">
             <h2 class="login-title">Iniciar Sesión</h2>
-            
+
+            {{-- Mensajes del proceso de autenticación --}}
+            @include('auth.partials.feedback')
+
             {{-- Formulario de autenticación por correo y contraseña --}}
 
             <form action="{{ route('login') }}" method="POST">
                 @csrf
                 <div class="login-form-group">
-                    <label class="login-label">Correo Electrónico</label>
-                    <input type="text" name="email" class="login-input" required autofocus>
+                    <label for="email" class="login-label">Correo Electrónico</label>
+                    <input id="email" type="email" name="email" class="login-input" value="{{ old('email') }}" autocomplete="username" required autofocus>
                 </div>
                 <div class="login-form-group">
-                    <label class="login-label">Contraseña</label>
-                    <input type="password" name="password" class="login-input" required>
+                    <label for="password" class="login-label">Contraseña</label>
+                    <input id="password" type="password" name="password" class="login-input" autocomplete="current-password" required>
                 </div>
                 <button type="submit" class="login-btn">Ingresar</button>
             </form>

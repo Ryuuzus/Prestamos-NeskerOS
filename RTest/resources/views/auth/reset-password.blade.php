@@ -20,19 +20,10 @@
     <div class="reset-container">
         <div class="reset-card">
             <h2 class="reset-title">Nueva Contraseña</h2>
-            
-            {{-- Visualización de errores de validación --}}
+            <p>Define una contraseña nueva y confírmala para recuperar el acceso a tu cuenta.</p>
 
-            @if ($errors->any())
-                <div class="reset-errors">
-                    <ul>
-                        @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
-
+            {{-- Mensajes del proceso de autenticación --}}
+            @include('auth.partials.feedback')
             {{-- Formulario para actualizar la contraseña con token encriptado --}}
             <form action="{{ route('password.update') }}" method="POST">
                 @csrf

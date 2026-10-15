@@ -20,19 +20,9 @@
     <div class="register-container">
         <div class="register-card">
             <h2 class="register-title">Crear Cuenta</h2>
-            
-            {{-- Despliegue de errores de validación del formulario --}}
 
-            @if ($errors->any())
-                <div class="register-errors">
-                    <ul>
-                        @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
-
+            {{-- Mensajes del proceso de autenticación --}}
+            @include('auth.partials.feedback')
             {{-- Formulario para crear una nueva cuenta --}}
 
             <form action="{{ route('register') }}" method="POST">

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Building;
+use App\Services\BuildingStatusService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -16,31 +17,35 @@ use Maatwebsite\Excel\Facades\Excel;
  * ==================================================================================================
  * DESCRIPCIÓN GENERAL:
  * Controlador de Gestión de Edificios (BuildingController).
- * 
+ *
  * Administra las operaciones CRUD para el modelo Building usando Route Model Binding,
  * filtrado seguro y exportación/importación en Excel.
+ * El cambio de estado de un edificio se delega a BuildingStatusService, que mantiene
+ * sincronizado el estado de sus aulas.
  * ==================================================================================================
-
  */
 class BuildingController extends Controller
 {
     /**
      * Muestra el listado de edificios con opción de búsqueda y paginación.
+     * Incluye el conteo de aulas ocupadas por edificio para avisar en el formulario
+     * cuando un edificio no puede pasar a mantenimiento.
      */
     public function index(Request $request): View
     {
         $search = $request->input('search');
 
-
-        $buildings = Building::when($search, function ($query, $search) {
-            return $query->where(function ($builder) use ($search) {
-                $builder->where('name', 'LIKE', "%{$search}%")
-                    ->orWhere('status', 'LIKE', "%{$search}%");
-            });
-        })->paginate(10);
+        $buildings = Building::withCount([
+                'classrooms as occupied_classrooms_count' => fn ($query) => $query->where('status', 'occupied'),
+            ])
+            ->when($search, function ($query, $search) {
+                return $query->where(function ($builder) use ($search) {
+                    $builder->where('name', 'LIKE', "%{$search}%")
+                        ->orWhere('status', 'LIKE', "%{$search}%");
+                });
+            })->paginate(10);
 
         return view('building.index', compact('buildings'));
-
     }
 
     /**
@@ -55,6 +60,7 @@ class BuildingController extends Controller
 
     /**
      * Almacena un nuevo edificio en la base de datos validando los datos recibidos.
+     * Un edificio nuevo no tiene aulas, por lo que no hay nada que sincronizar.
      */
     public function store(Request $request): RedirectResponse
     {
@@ -67,7 +73,6 @@ class BuildingController extends Controller
         Building::create($validated);
 
         return redirect()->route('buildings.index')->with('success', 'Edificio creado exitosamente.');
-
     }
 
     /**
@@ -75,7 +80,6 @@ class BuildingController extends Controller
      */
     public function show(Building $building): View
     {
-
         return view('building.show', compact('building'));
     }
 
@@ -84,14 +88,15 @@ class BuildingController extends Controller
      */
     public function edit(Building $building): View
     {
-
         return view('building.edit', compact('building'));
     }
 
     /**
-     * Actualiza la información de un edificio en la base de datos.
+     * Actualiza el edificio. Si su estado cambia:
+     *  - a mantenimiento: se bloquea si hay aulas ocupadas; si no, todas sus aulas pasan a mantenimiento.
+     *  - a disponible: sus aulas vuelven a disponible.
      */
-    public function update(Request $request, Building $building): RedirectResponse
+    public function update(Request $request, Building $building, BuildingStatusService $statusService): RedirectResponse
     {
         $validated = $request->validateWithBag('editBuilding' . $building->id, [
             'name'   => 'required|string|max:100|unique:buildings,name,' . $building->id,
@@ -99,10 +104,18 @@ class BuildingController extends Controller
             'status' => 'required|in:available,maintenance',
         ]);
 
-        $building->update($validated);
+        // Lanza ValidationException (con el bag del modal correcto) si hay aulas ocupadas.
+        $affected = $statusService->update($building, $validated);
 
-        return redirect()->route('buildings.index')->with('success', 'Edificio actualizado exitosamente.');
+        $message = 'Edificio actualizado exitosamente.';
 
+        if ($affected > 0) {
+            $message .= $validated['status'] === Building::STATUS_MAINTENANCE
+                ? " {$affected} aula(s) pasaron a mantenimiento."
+                : " {$affected} aula(s) volvieron a estar disponibles.";
+        }
+
+        return redirect()->route('buildings.index')->with('success', $message);
     }
 
     /**
@@ -120,14 +133,12 @@ class BuildingController extends Controller
      * Exporta el catálogo de edificios a un archivo Excel (.xlsx).
      */
     public function export()
-
     {
         return Excel::download(new BuildingExport, 'edificios.xlsx');
     }
 
     /**
      * Importa edificios masivamente desde un archivo Excel o CSV.
-
      */
     public function import(Request $request): RedirectResponse
     {
@@ -140,4 +151,3 @@ class BuildingController extends Controller
         return back()->with('success', '¡Edificios importados exitosamente!');
     }
 }
-

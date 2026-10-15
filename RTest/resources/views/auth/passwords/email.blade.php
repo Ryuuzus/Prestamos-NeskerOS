@@ -19,14 +19,8 @@
                 <div class="card-header">{{ __('Reset Password') }}</div>
 
                 <div class="card-body">
-                    {{-- Alerta de estado tras enviar exitosamente el correo --}}
-
-                    @if (session('status'))
-                        <div class="alert alert-success" role="alert">
-                            {{ session('status') }}
-                        </div>
-                    @endif
-
+                    {{-- Mensajes del proceso de recuperación de contraseña --}}
+                    @include('auth.partials.feedback')
                     {{-- Formulario de envío de enlace de restablecimiento --}}
                     <form method="POST" action="{{ route('password.email') }}">
                         @csrf

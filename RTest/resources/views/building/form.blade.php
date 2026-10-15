@@ -2,6 +2,7 @@
     DESCRIPCIÓN GENERAL:
     Campos reutilizables del formulario para la gestión de Edificios.
     Mantiene aislados los errores y valores anteriores de cada modal (crear y editar).
+    Si el edificio tiene aulas ocupadas, la opción "Maintenance" se deshabilita y se explica por qué.
 --================================================================================================== --}}
 
 @php
@@ -29,6 +30,17 @@
     $statusValue = $isActiveForm
         ? old('status', $building->status ?? 'available')
         : ($building->status ?? 'available');
+
+    // Aulas ocupadas (viene del withCount del controlador). En un edificio nuevo es 0.
+    $occupiedCount = (int) ($building->occupied_classrooms_count ?? 0);
+    $savedStatus = $building->status ?? 'available';
+
+    // No se puede entrar a mantenimiento con aulas ocupadas.
+    $blockMaintenance = $occupiedCount > 0 && $savedStatus !== 'maintenance';
+
+    if ($blockMaintenance && $statusValue === 'maintenance') {
+        $statusValue = 'available';
+    }
 @endphp
 
 {{-- Resumen de validación en la parte superior del formulario activo --}}
@@ -86,6 +98,20 @@
         @if($isActiveForm && $formErrors->has('status')) aria-invalid="true" @endif
     >
         <option value="available" {{ $statusValue === 'available' ? 'selected' : '' }}>Available</option>
-        <option value="maintenance" {{ $statusValue === 'maintenance' ? 'selected' : '' }}>Maintenance</option>
+        <option value="maintenance" {{ $statusValue === 'maintenance' ? 'selected' : '' }} {{ $blockMaintenance ? 'disabled' : '' }}>
+            Maintenance{{ $blockMaintenance ? ' (no disponible)' : '' }}
+        </option>
     </select>
+
+    {{-- Aviso contextual sobre la relación con las aulas --}}
+    @if($blockMaintenance)
+        <div class="form-text text-muted small mt-1">
+            No se puede poner en mantenimiento: tiene {{ $occupiedCount }} aula(s) ocupada(s).
+        </div>
+    @elseif(!$isCreateForm)
+        <div class="form-text text-muted small mt-1">
+            Al poner el edificio en mantenimiento, todas sus aulas pasan a mantenimiento.
+            Al volver a disponible, sus aulas quedan disponibles.
+        </div>
+    @endif
 </div>

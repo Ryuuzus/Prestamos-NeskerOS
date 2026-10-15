@@ -28,19 +28,13 @@
             </svg>
 
             <h2 class="verify-title">Verifica tu correo</h2>
-            
+
+            {{-- Mensajes del proceso de autenticación --}}
+            @include('auth.partials.feedback')
+
             <p class="verify-text">
                 ¡Gracias por registrarte! Antes de comenzar, por favor verifica tu dirección de correo electrónico haciendo clic en el enlace que te acabamos de enviar.
             </p>
-
-            {{-- Alerta informativa tras reenviar la solicitud de correo --}}
-
-            @if (session('status') == 'verification-link-sent')
-                <div class="verify-alert">
-                    Se ha enviado un nuevo enlace de verificación a la dirección de correo que proporcionaste durante el registro.
-                </div>
-            @endif
-
             {{-- Formulario para solicitar el reenvío del correo de verificación --}}
 
             <form method="POST" action="{{ route('verification.send') }}">

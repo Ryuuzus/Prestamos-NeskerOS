@@ -16,10 +16,14 @@ use Illuminate\Validation\Rule;
  *  - El nombre del aula NO puede repetirse dentro del mismo edificio Y el mismo piso.
  *  - El mismo nombre SÍ puede existir en otro piso o en otro edificio.
  *  - El piso debe existir dentro del número de pisos del edificio seleccionado.
+ *  - Si el edificio está en mantenimiento, el aula solo puede estar en mantenimiento.
  * ==================================================================================================
  */
 class ClassroomRequest extends FormRequest
 {
+    /** Edificio seleccionado en el formulario (se consulta una sola vez). */
+    private ?Building $selectedBuilding = null;
+
     public function authorize(): bool
     {
         return true;
@@ -36,6 +40,14 @@ class ClassroomRequest extends FormRequest
                 'classroom' => preg_replace('/\s+/', ' ', trim((string) $this->input('classroom'))),
             ]);
         }
+    }
+
+    /**
+     * Edificio elegido en el formulario, o null si no existe.
+     */
+    private function building(): ?Building
+    {
+        return $this->selectedBuilding ??= Building::find($this->input('buildings_id'));
     }
 
     public function rules(): array
@@ -69,7 +81,7 @@ class ClassroomRequest extends FormRequest
                 'min:1',
                 // El piso no puede superar los pisos que tiene el edificio.
                 function (string $attribute, mixed $value, \Closure $fail) {
-                    $building = Building::find($this->input('buildings_id'));
+                    $building = $this->building();
 
                     if ($building && (int) $value > (int) $building->floors) {
                         $fail("El edificio seleccionado solo tiene {$building->floors} piso(s).");
@@ -77,7 +89,18 @@ class ClassroomRequest extends FormRequest
                 },
             ],
 
-            'status' => ['required', Rule::in(['available', 'maintenance', 'occupied'])],
+            'status' => [
+                'required',
+                Rule::in(['available', 'maintenance', 'occupied']),
+                // Un edificio en mantenimiento mantiene todas sus aulas en mantenimiento.
+                function (string $attribute, mixed $value, \Closure $fail) {
+                    $building = $this->building();
+
+                    if ($building && $building->isUnderMaintenance() && $value !== 'maintenance') {
+                        $fail("El edificio «{$building->name}» está en mantenimiento: sus aulas solo pueden estar en mantenimiento.");
+                    }
+                },
+            ],
         ];
     }
 
