@@ -63,7 +63,7 @@
                             {{-- Detalle del recurso reservado (Aula, Dispositivo o ambos) --}}
                             <td>
                                 @if($reservation->classroom) Aula: {{ $reservation->classroom->classroom }} <br> @endif
-                                @if($reservation->device) Disp: {{ $reservation->device->device_name }} @endif
+                                @if($reservation->device) Disp: {{ $reservation->device->name }} @endif
                             </td>
                             
                             <td>{{ $reservation->start_time }}</td>
