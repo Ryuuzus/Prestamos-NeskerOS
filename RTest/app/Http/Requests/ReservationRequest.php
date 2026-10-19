@@ -5,6 +5,7 @@ namespace App\Http\Requests;
 use App\Models\Classroom;
 use App\Models\Device;
 use App\Models\Reservation;
+use App\Services\AvailabilityService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -46,6 +47,11 @@ class ReservationRequest extends FormRequest
                 $this->merge([$field => substr($value, 0, 5)]);
             }
         }
+
+        // Sin dispositivo la cantidad no aplica (queda en 1).
+        if (! $this->filled('device_id')) {
+            $this->merge(['device_quantity' => 1]);
+        }
     }
 
     public function rules(): array
@@ -63,6 +69,9 @@ class ReservationRequest extends FormRequest
                 'integer',
                 Rule::exists((new Device())->getTable(), 'id'),
             ],
+
+            // Unidades del dispositivo que se solicitan.
+            'device_quantity' => ['nullable', 'required_with:device_id', 'integer', 'min:1', 'max:9999'],
 
             'start_date' => ['required', 'date_format:Y-m-d'],
             'start_time' => ['required', 'date_format:H:i'],
@@ -124,53 +133,58 @@ class ReservationRequest extends FormRequest
     }
 
     /**
-     * Revisa el aula y el dispositivo elegidos: que no estén en mantenimiento
-     * y que no se crucen con una reservación ya aprobada.
+     * Revisa el aula y el dispositivo elegidos con AvailabilityService:
+     *  - Aula: que no esté en mantenimiento y que no se cruce con una reservación aprobada.
+     *  - Dispositivo: que no esté en mantenimiento y que queden unidades suficientes en ese horario.
      */
     private function validateResources(Validator $validator, Carbon $start, Carbon $end): void
     {
         $routeParam = $this->route('reservation');
         $ignoreId   = $routeParam instanceof Reservation ? $routeParam->getKey() : $routeParam;
+        $ignoreId   = $ignoreId ? (int) $ignoreId : null;
 
-        $targets = [
-            'classroom_id' => [Classroom::class, 'El aula'],
-            'device_id'    => [Device::class, 'El dispositivo'],
-        ];
+        $availability = app(AvailabilityService::class);
 
-        foreach ($targets as $field => [$model, $label]) {
-            $id = $this->input($field);
+        // ---- Aula ----
+        $classroomId = $this->input('classroom_id');
 
-            if (! $id || $validator->errors()->has($field)) {
-                continue;
-            }
-
-            $resource = $model::find($id);
-
-            if (! $resource) {
-                continue;
-            }
-
-            $name = $resource instanceof Classroom ? $resource->classroom : $resource->name;
-
-            if ($resource->status === 'maintenance') {
-                $validator->errors()->add($field, "{$label} «{$name}» está en mantenimiento y no se puede reservar.");
-                continue;
-            }
-
-            $conflict = Reservation::query()
-                ->approved()
-                ->where($field, $id)
-                ->when($ignoreId, fn ($query) => $query->where('id', '<>', $ignoreId))
-                ->overlapping($start, $end)
-                ->first();
-
-            if ($conflict) {
+        if ($classroomId && ! $validator->errors()->has('classroom_id') && ($classroom = Classroom::find($classroomId))) {
+            if ($classroom->status === 'maintenance') {
+                $validator->errors()->add('classroom_id', "El aula «{$classroom->classroom}» está en mantenimiento y no se puede reservar.");
+            } elseif ($conflict = $availability->classroomConflict($classroom, $start, $end, $ignoreId)) {
                 $validator->errors()->add(
-                    $field,
-                    "{$label} «{$name}» ya tiene una reservación aprobada del "
+                    'classroom_id',
+                    "El aula «{$classroom->classroom}» ya tiene una reservación aprobada del "
                     . $conflict->start_at->format('d/m/Y H:i') . ' al ' . $conflict->end_at->format('d/m/Y H:i')
                     . ' que se cruza con el horario elegido.'
                 );
+            }
+        }
+
+        // ---- Dispositivo ----
+        $deviceId = $this->input('device_id');
+
+        if (
+            $deviceId
+            && ! $validator->errors()->has('device_id')
+            && ! $validator->errors()->has('device_quantity')
+            && ($device = Device::find($deviceId))
+        ) {
+            $requested = (int) $this->input('device_quantity', 1);
+
+            if ($device->status === 'maintenance') {
+                $validator->errors()->add('device_id', "El dispositivo «{$device->name}» está en mantenimiento y no se puede reservar.");
+            } else {
+                $available = $availability->deviceAvailableUnits($device, $start, $end, $ignoreId);
+
+                if ($requested > $available) {
+                    $validator->errors()->add(
+                        'device_quantity',
+                        $available === 0
+                            ? "El dispositivo «{$device->name}» no tiene unidades disponibles en ese horario."
+                            : "Solo hay {$available} unidad(es) disponible(s) de «{$device->name}» en ese horario y solicitaste {$requested}."
+                    );
+                }
             }
         }
     }
@@ -192,6 +206,11 @@ class ReservationRequest extends FormRequest
             'device_id.required_without' => 'Debes elegir un aula o un dispositivo.',
             'device_id.exists'           => 'El dispositivo seleccionado no existe.',
             'device_id.integer'          => 'El dispositivo seleccionado no es válido.',
+
+            'device_quantity.required_with' => 'Indica cuántas unidades del dispositivo necesitas.',
+            'device_quantity.integer'       => 'La cantidad de unidades debe ser un número entero.',
+            'device_quantity.min'           => 'Debes pedir al menos 1 unidad.',
+            'device_quantity.max'           => 'La cantidad de unidades no puede ser mayor a 9999.',
 
             'start_date.required'    => 'La fecha de inicio es obligatoria.',
             'start_date.date_format' => 'La fecha de inicio no es válida.',

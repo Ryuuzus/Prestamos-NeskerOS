@@ -13,12 +13,12 @@ use Illuminate\Validation\ValidationException;
  * DESCRIPCIÓN GENERAL:
  * Reglas de negocio del estado de un Edificio y su efecto sobre sus Aulas.
  *
- *  1. Un edificio NO puede pasar a "maintenance" si alguna de sus aulas está "occupied" o tiene
- *     reservaciones aprobadas sin completar (las reservaciones se hacen con una semana de
- *     anticipación, así que un aula puede estar libre hoy y tener una reservación aprobada futura).
+ *  1. Un edificio NO puede pasar a "maintenance" si alguna de sus aulas tiene reservaciones
+ *     aprobadas sin completar (en curso, con devolución pendiente o futuras).
  *  2. Al pasar a "maintenance", TODAS sus aulas pasan a "maintenance".
  *  3. Al volver a "available", sus aulas vuelven a "available" y desde ahí cada aula puede
- *     cambiar de forma individual (available / occupied / maintenance).
+ *     ponerse en mantenimiento de forma individual. La ocupación no se guarda: se calcula con
+ *     las reservaciones aprobadas (ver AvailabilityService).
  *  4. Si el estado del edificio no cambia (por ejemplo, solo se edita el nombre), NO se toca
  *     el estado de ninguna aula.
  *
@@ -33,7 +33,7 @@ class BuildingStatusService
      * @param  array<string, mixed>  $data  Datos ya validados (name, floors, status).
      * @return int  Cantidad de aulas cuyo estado fue modificado por el cambio de estado del edificio.
      *
-     * @throws ValidationException  Si se intenta poner en mantenimiento un edificio con aulas en uso o reservadas.
+     * @throws ValidationException  Si se intenta poner en mantenimiento un edificio con aulas reservadas.
      */
     public function update(Building $building, array $data): int
     {
@@ -41,7 +41,7 @@ class BuildingStatusService
             $newStatus     = $data['status'];
             $statusChanged = $building->status !== $newStatus;
 
-            // Regla 1: no se puede entrar a mantenimiento con aulas ocupadas o reservadas.
+            // Regla 1: no se puede entrar a mantenimiento con aulas que tengan reservaciones aprobadas.
             if ($statusChanged && $newStatus === Building::STATUS_MAINTENANCE) {
                 // Se bloquean las aulas del edificio mientras se valida, para que nadie
                 // pueda marcar una como ocupada justo en este instante.
@@ -55,9 +55,7 @@ class BuildingStatusService
                     ->pluck('classroom_id')
                     ->unique();
 
-                $blocked = $classrooms->filter(
-                    fn ($classroom) => $classroom->status === 'occupied' || $reservedIds->contains($classroom->id)
-                );
+                $blocked = $classrooms->filter(fn ($classroom) => $reservedIds->contains($classroom->id));
 
                 if ($blocked->isNotEmpty()) {
                     throw ValidationException::withMessages([
@@ -90,6 +88,6 @@ class BuildingStatusService
 
         $list = $rest > 0 ? "{$shown} y {$rest} más" : $shown;
 
-        return "No se puede poner el edificio en mantenimiento porque tiene aulas ocupadas o con reservaciones aprobadas sin completar: {$list}.";
+        return "No se puede poner el edificio en mantenimiento porque tiene aulas con reservaciones aprobadas sin completar: {$list}.";
     }
 }

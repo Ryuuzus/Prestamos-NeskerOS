@@ -6,26 +6,30 @@ use App\Exceptions\ReservationException;
 use App\Models\Classroom;
 use App\Models\Device;
 use App\Models\Reservation;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
 /**
  * ==================================================================================================
  * DESCRIPCIÓN GENERAL:
- * Ciclo de vida de una reservación y su efecto sobre el estado del aula / dispositivo.
+ * Ciclo de vida de una reservación.
  *
- *  pending   -> approved  : el recurso pasa a "occupied" (si no está en mantenimiento y no hay cruce).
- *  pending   -> rejected  : el recurso no cambia.
- *  approved  -> completed : el recurso vuelve a "available" SOLO si no le quedan otras reservaciones
- *                           aprobadas; si le quedan, sigue "occupied".
- *  eliminar una aprobada  : misma sincronización que al completar.
+ *  pending   -> approved  : se valida que el aula/dispositivo no esté en mantenimiento y que haya
+ *                           disponibilidad en el horario (aula libre, o unidades suficientes).
+ *  pending   -> rejected  : se registra el motivo.
+ *  approved  -> completed : se registra la entrega/devolución (actual_return_time).
+ *  eliminar               : un usuario normal solo puede eliminar las pendientes.
  *
- * Un recurso en "maintenance" nunca se cambia aquí. Todo corre en una transacción y con las filas
- * del recurso bloqueadas, para que dos aprobaciones simultáneas no se crucen.
+ * Este servicio NO modifica el estado del aula ni del dispositivo: la ocupación se calcula con las
+ * reservaciones aprobadas (ver AvailabilityService). Todo corre en una transacción y las filas del
+ * recurso se bloquean al aprobar, para que dos aprobaciones simultáneas no se crucen.
  * ==================================================================================================
  */
 class ReservationService
 {
+    public function __construct(private AvailabilityService $availability)
+    {
+    }
+
     /**
      * Aprueba una reservación pendiente.
      *
@@ -44,33 +48,54 @@ class ReservationService
                 throw new ReservationException('La reservación ya venció y no se puede aprobar. Recházala indicando el motivo.');
             }
 
-            foreach ($this->resourcesOf($reservation) as [$resource, $foreignKey, $label, $name]) {
-                if ($resource->status === 'maintenance') {
-                    throw new ReservationException("{$label} «{$name}» está en mantenimiento; no se puede aprobar la reservación.");
+            // Se bloquean las filas del recurso mientras se valida la disponibilidad.
+            $classroom = $reservation->classroom_id ? Classroom::lockForUpdate()->find($reservation->classroom_id) : null;
+            $device    = $reservation->device_id ? Device::lockForUpdate()->find($reservation->device_id) : null;
+
+            if ($classroom) {
+                if ($classroom->status === 'maintenance') {
+                    throw new ReservationException("El aula «{$classroom->classroom}» está en mantenimiento; no se puede aprobar la reservación.");
                 }
 
-                $conflict = Reservation::query()
-                    ->approved()
-                    ->where($foreignKey, $resource->getKey())
-                    ->where('id', '<>', $reservation->id)
-                    ->overlapping($reservation->start_at, $reservation->end_at)
-                    ->first();
+                $conflict = $this->availability->classroomConflict(
+                    $classroom,
+                    $reservation->start_at,
+                    $reservation->end_at,
+                    $reservation->id,
+                );
 
                 if ($conflict) {
                     throw new ReservationException(
-                        "{$label} «{$name}» ya tiene la reservación aprobada #{$conflict->id} que se cruza con este horario."
+                        "El aula «{$classroom->classroom}» ya tiene la reservación aprobada #{$conflict->id} que se cruza con este horario."
+                    );
+                }
+            }
+
+            if ($device) {
+                if ($device->status === 'maintenance') {
+                    throw new ReservationException("El dispositivo «{$device->name}» está en mantenimiento; no se puede aprobar la reservación.");
+                }
+
+                $available = $this->availability->deviceAvailableUnits(
+                    $device,
+                    $reservation->start_at,
+                    $reservation->end_at,
+                    $reservation->id,
+                );
+
+                if ((int) $reservation->device_quantity > $available) {
+                    throw new ReservationException(
+                        "El dispositivo «{$device->name}» solo tiene {$available} unidad(es) disponible(s) en ese horario y la reservación pide {$reservation->device_quantity}."
                     );
                 }
             }
 
             $reservation->update(['status' => Reservation::STATUS_APPROVED]);
-
-            $this->syncResources($reservation);
         });
     }
 
     /**
-     * Rechaza una reservación pendiente. No modifica el estado de ningún recurso.
+     * Rechaza una reservación pendiente.
      *
      * @throws ReservationException
      */
@@ -81,13 +106,14 @@ class ReservationService
         }
 
         $reservation->update([
-            'status' => Reservation::STATUS_REJECTED,
+            'status'           => Reservation::STATUS_REJECTED,
             'rejection_reason' => $reason,
         ]);
     }
 
     /**
-     * Marca una reservación aprobada como entregada/devuelta y libera el recurso.
+     * Marca una reservación aprobada como entregada/devuelta. Al dejar de estar "aprobada",
+     * el aula o las unidades vuelven a contar como disponibles automáticamente.
      *
      * @throws ReservationException
      */
@@ -101,11 +127,9 @@ class ReservationService
             }
 
             $reservation->update([
-                'status' => Reservation::STATUS_COMPLETED,
+                'status'             => Reservation::STATUS_COMPLETED,
                 'actual_return_time' => now(),
             ]);
-
-            $this->syncResources($reservation);
         });
     }
 
@@ -123,90 +147,7 @@ class ReservationService
                 throw new ReservationException('Solo puedes cancelar solicitudes pendientes.');
             }
 
-            $wasApproved = $reservation->status === Reservation::STATUS_APPROVED;
-
             $reservation->delete();
-
-            if ($wasApproved) {
-                $this->syncResources($reservation);
-            }
         });
-    }
-
-    /**
-     * Marca como ocupados los recursos de reservaciones aprobadas que ya iniciaron.
-     */
-    public function activateStarted(): int
-    {
-        return DB::transaction(function (): int {
-            $reservations = Reservation::query()
-                ->approved()
-                ->started()
-                ->lockForUpdate()
-                ->get();
-            $changed = 0;
-
-            foreach ($reservations as $reservation) {
-                foreach ($this->resourcesOf($reservation) as [$resource]) {
-                    if ($resource->status === 'maintenance' || $resource->status === 'occupied') {
-                        continue;
-                    }
-
-                    $resource->update(['status' => 'occupied']);
-                    $changed++;
-                }
-            }
-
-            return $changed;
-        });
-    }
-
-    /**
-     * Recalcula el estado de los recursos de la reservación:
-     * "occupied" si les queda al menos una reservación aprobada; si no, "available".
-     * Los recursos en mantenimiento no se tocan.
-     */
-    private function syncResources(Reservation $reservation): void
-    {
-        foreach ($this->resourcesOf($reservation) as [$resource, $foreignKey]) {
-            if ($resource->status === 'maintenance') {
-                continue;
-            }
-
-            $hasApproved = Reservation::query()
-                ->approved()
-                ->where($foreignKey, $resource->getKey())
-                ->exists();
-
-            $resource->update(['status' => $hasApproved ? 'occupied' : 'available']);
-        }
-    }
-
-    /**
-     * Aula y/o dispositivo de la reservación, con la fila bloqueada para escritura.
-     *
-     * @return array<int, array{0: Model, 1: string, 2: string, 3: string}>
-     */
-    private function resourcesOf(Reservation $reservation): array
-    {
-        $resources = [];
-
-        if ($reservation->classroom_id) {
-            $classroom = Classroom::lockForUpdate()->find($reservation->classroom_id);
-
-            if ($classroom) {
-                $resources[] = [$classroom, 'classroom_id', 'El aula', $classroom->classroom];
-            }
-        }
-
-        if ($reservation->device_id) {
-            $device = Device::lockForUpdate()->find($reservation->device_id);
-
-            if ($device) {
-                $resources[] = [$device, 'device_id', 'El dispositivo', $device->name];
-            }
-        }
-
-        return $resources;
     }
 }

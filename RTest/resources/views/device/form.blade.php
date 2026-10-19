@@ -95,6 +95,6 @@
         <option value="">-- {{ __('Select Status') }} --</option>
         <option value="available"   {{ $currentStatus === 'available'   ? 'selected' : '' }}>{{ __('Available') }}</option>
         <option value="maintenance" {{ $currentStatus === 'maintenance' ? 'selected' : '' }}>{{ __('Maintenance') }}</option>
-        <option value="occupied"    {{ $currentStatus === 'occupied'    ? 'selected' : '' }}>{{ __('Occupied') }}</option>
     </select>
+    <div class="form-text text-muted small mt-1">Las unidades en uso se calculan con las reservaciones aprobadas; aquí solo se marca el mantenimiento.</div>
 </div>

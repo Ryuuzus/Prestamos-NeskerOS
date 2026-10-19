@@ -66,13 +66,7 @@
                 </div>
 
                 {{-- Tabla --}}
-                @php
-                    $statusLabels = [
-                        'available'   => 'Disponible',
-                        'maintenance' => 'Mantenimiento',
-                        'occupied'    => 'Ocupado',
-                    ];
-                @endphp
+                {{-- El estado guardado solo distingue disponible / mantenimiento; las unidades en uso se calculan con las reservaciones aprobadas que ya iniciaron. --}}
 
                 <div class="table-responsive">
                     <table class="custom-table">
@@ -81,7 +75,7 @@
                                 <th class="building-id-column">No</th>
                                 <th>Dispositivo</th>
                                 <th>Número serial</th>
-                                <th class="building-floors-column">Cantidad</th>
+                                <th class="building-floors-column" title="Disponibles ahora / total">Unidades</th>
                                 <th class="building-status-column">Estado</th>
                                 <th class="building-actions-column">Acciones</th>
                             </tr>
@@ -95,12 +89,16 @@
 
                                     <td class="building-name-cell">{{ $device->serial_number }}</td>
 
-                                    <td class="building-floors-column">{{ $device->quantity }}</td>
+                                    <td class="building-floors-column" title="Disponibles ahora / total">{{ $device->available_units_now }} / {{ $device->quantity }}</td>
 
                                     <td class="building-status-column">
-                                        <span class="building-status-badge status-{{ $device->status }}">
-                                            {{ $statusLabels[$device->status] ?? ucfirst($device->status) }}
-                                        </span>
+                                        @if($device->status === 'maintenance')
+                                            <span class="building-status-badge status-maintenance">Mantenimiento</span>
+                                        @elseif($device->available_units_now === 0)
+                                            <span class="building-status-badge status-occupied">Sin unidades ahora</span>
+                                        @else
+                                            <span class="building-status-badge status-available">Disponible</span>
+                                        @endif
                                     </td>
 
                                     <td class="building-actions-column">

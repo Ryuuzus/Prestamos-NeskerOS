@@ -126,7 +126,7 @@
 
                                     <td class="building-name-cell">
                                         @if($reservation->device)
-                                            {{ $reservation->device->name }}
+                                            {{ $reservation->device->name }} × {{ $reservation->device_quantity }}
                                             <small class="text-muted d-block">{{ $reservation->device->serial_number }}</small>
                                         @else
                                             <span class="text-muted">—</span>

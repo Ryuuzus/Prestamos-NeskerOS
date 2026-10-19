@@ -66,13 +66,7 @@
                 </div>
 
                 {{-- Tabla --}}
-                @php
-                    $statusLabels = [
-                        'available'   => 'Disponible',
-                        'maintenance' => 'Mantenimiento',
-                        'occupied'    => 'Ocupado',
-                    ];
-                @endphp
+                {{-- El estado guardado solo distingue disponible / mantenimiento; "Ocupada ahora" se calcula con las reservaciones aprobadas que ya iniciaron. --}}
 
                 <div class="table-responsive">
                     <table class="custom-table">
@@ -98,9 +92,13 @@
                                     <td class="building-floors-column">{{ $classroom->floor }}</td>
 
                                     <td class="building-status-column">
-                                        <span class="building-status-badge status-{{ $classroom->status }}">
-                                            {{ $statusLabels[$classroom->status] ?? ucfirst($classroom->status) }}
-                                        </span>
+                                        @if($classroom->status === 'maintenance')
+                                            <span class="building-status-badge status-maintenance">Mantenimiento</span>
+                                        @elseif($classroom->in_use)
+                                            <span class="building-status-badge status-occupied">Ocupada ahora</span>
+                                        @else
+                                            <span class="building-status-badge status-available">Disponible</span>
+                                        @endif
                                     </td>
 
                                     <td class="building-actions-column">

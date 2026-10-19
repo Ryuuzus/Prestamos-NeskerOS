@@ -28,7 +28,7 @@ class BuildingController extends Controller
 {
     /**
      * Muestra el listado de edificios con opción de búsqueda y paginación.
-     * Incluye el conteo de aulas ocupadas por edificio para avisar en el formulario
+     * Incluye el conteo de aulas con reservaciones aprobadas por edificio para avisar en el formulario
      * cuando un edificio no puede pasar a mantenimiento.
      */
     public function index(Request $request): View
@@ -36,7 +36,7 @@ class BuildingController extends Controller
         $search = $request->input('search');
 
         $buildings = Building::withCount([
-                'classrooms as occupied_classrooms_count' => fn ($query) => $query->where('status', 'occupied'),
+                'classrooms as reserved_classrooms_count' => fn ($query) => $query->whereHas('reservations', fn ($r) => $r->approved()),
             ])
             ->when($search, function ($query, $search) {
                 return $query->where(function ($builder) use ($search) {

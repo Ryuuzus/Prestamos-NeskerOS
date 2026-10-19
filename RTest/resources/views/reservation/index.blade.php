@@ -68,7 +68,7 @@
                             <td>{{ $reservation->id }}</td>
                             <td>{{ $reservation->user->name ?? 'N/A' }}</td>
                             <td>{{ $reservation->classroom->classroom ?? 'Ninguna/Eliminado' }}</td>
-                            <td>{{ $reservation->device->name ?? 'Ninguno/Eliminado' }}</td>
+                            <td>{{ $reservation->device ? $reservation->device->name . ' × ' . $reservation->device_quantity : 'Ninguno/Eliminado' }}</td>
                             <td>{{ $reservation->start_at?->format('d/m/Y H:i') }}</td>
                             <td>{{ $reservation->end_at?->format('d/m/Y H:i') }}</td>
                             <td>

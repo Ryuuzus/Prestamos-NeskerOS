@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Models\Building;
 use App\Models\Classroom;
+use App\Rules\NoActiveReservations;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -91,7 +92,9 @@ class ClassroomRequest extends FormRequest
 
             'status' => [
                 'required',
-                Rule::in(['available', 'maintenance', 'occupied']),
+                Rule::in(['available', 'maintenance']),
+                // No se puede poner en mantenimiento un aula con reservaciones aprobadas sin completar.
+                new NoActiveReservations($routeParam instanceof Classroom ? $routeParam : null, 'classroom_id'),
                 // Un edificio en mantenimiento mantiene todas sus aulas en mantenimiento.
                 function (string $attribute, mixed $value, \Closure $fail) {
                     $building = $this->building();

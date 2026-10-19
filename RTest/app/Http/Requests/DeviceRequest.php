@@ -3,6 +3,8 @@
 namespace App\Http\Requests;
 
 use App\Models\Device;
+use App\Rules\DeviceQuantityCoversReservations;
+use App\Rules\NoActiveReservations;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -52,9 +54,21 @@ class DeviceRequest extends FormRequest
                 Rule::unique((new Device())->getTable(), 'serial_number')->ignore($deviceId),
             ],
 
-            'quantity' => ['required', 'integer', 'min:1', 'max:9999'],
+            // La cantidad no puede bajar de las unidades que las reservaciones aprobadas usan a la vez.
+            'quantity' => [
+                'required',
+                'integer',
+                'min:1',
+                'max:9999',
+                new DeviceQuantityCoversReservations($routeParam instanceof Device ? $routeParam : null),
+            ],
 
-            'status' => ['required', Rule::in(['available', 'maintenance', 'occupied'])],
+            'status' => [
+                'required',
+                Rule::in(['available', 'maintenance']),
+                // No se puede poner en mantenimiento un dispositivo con reservaciones aprobadas sin completar.
+                new NoActiveReservations($routeParam instanceof Device ? $routeParam : null, 'device_id'),
+            ],
         ];
     }
 

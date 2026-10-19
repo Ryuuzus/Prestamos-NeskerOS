@@ -40,7 +40,9 @@ class DeviceController extends Controller
     {
         $search = trim((string) $request->input('search'));
 
+        // units_in_use = unidades en uso ahora (reservaciones aprobadas que ya iniciaron y no se han completado).
         $devices = Device::query()
+            ->withSum(['reservations as units_in_use' => fn ($query) => $query->approved()->started()], 'device_quantity')
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('name', 'LIKE', "%{$search}%")

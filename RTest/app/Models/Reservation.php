@@ -37,6 +37,7 @@ class Reservation extends Model
         'user_id',
         'classroom_id',
         'device_id',
+        'device_quantity',
         'start_date',
         'start_time',
         'end_date',

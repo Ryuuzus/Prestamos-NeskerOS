@@ -46,7 +46,6 @@
                     <option value="{{ $classroom->id }}"
                         {{ (string) old('classroom_id', $reservation->classroom_id ?? '') === (string) $classroom->id ? 'selected' : '' }}>
                         {{ $classroom->building->name ?? 'Sin edificio' }} · {{ $classroom->classroom }} (Piso {{ $classroom->floor ?? 'N/A' }})
-                        {{ $classroom->status === 'occupied' ? '· con reservaciones aprobadas' : '' }}
                     </option>
                 @endforeach
             @endif
@@ -54,20 +53,28 @@
     </div>
 
     {{-- Campo: Selección opcional de Dispositivo --}}
-    <div class="col-md-6 mb-3">
+    <div class="col-md-4 mb-3">
         <label for="device_id" class="custom-label">Dispositivo (Opcional)</label>
         <select name="device_id" id="device_id" class="custom-input @error('device_id') is-invalid @enderror">
             <option value="">Ninguno</option>
             @if(isset($devices) && $devices->count() > 0)
                 @foreach ($devices as $device)
-                    <option value="{{ $device->id }}"
+                    <option value="{{ $device->id }}" data-quantity="{{ $device->quantity }}"
                         {{ (string) old('device_id', $reservation->device_id ?? '') === (string) $device->id ? 'selected' : '' }}>
-                        {{ $device->name }} (Número de serie: {{ $device->serial_number ?? 'N/A' }})
-                        {{ $device->status === 'occupied' ? '· con reservaciones aprobadas' : '' }}
+                        {{ $device->name }} (Serie: {{ $device->serial_number ?? 'N/A' }} · {{ $device->quantity }} unidad(es))
                     </option>
                 @endforeach
             @endif
         </select>
+    </div>
+
+    {{-- Campo: Unidades del dispositivo (se limita al total del dispositivo elegido) --}}
+    <div class="col-md-2 mb-3">
+        <label for="device_quantity" class="custom-label">Unidades</label>
+        <input type="number" name="device_quantity" id="device_quantity"
+               class="custom-input @error('device_quantity') is-invalid @enderror"
+               value="{{ old('device_quantity', $reservation->device_quantity ?? 1) }}"
+               min="1" step="1">
     </div>
 
     {{-- Inicio: fecha y hora por separado --}}
@@ -101,3 +108,31 @@
     </div>
 
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const device = document.getElementById('device_id');
+    const qty = document.getElementById('device_quantity');
+
+    if (!device || !qty) return;
+
+    // La cantidad solo aplica si hay un dispositivo elegido y no puede pasar de su total.
+    function syncQuantity() {
+        const option = device.options[device.selectedIndex];
+        const max = option ? parseInt(option.getAttribute('data-quantity')) : NaN;
+
+        if (device.value && !isNaN(max)) {
+            qty.disabled = false;
+            qty.max = max;
+            if (parseInt(qty.value) > max) qty.value = max;
+            if (!qty.value || parseInt(qty.value) < 1) qty.value = 1;
+        } else {
+            qty.disabled = true;
+            qty.value = 1;
+        }
+    }
+
+    device.addEventListener('change', syncQuantity);
+    syncQuantity();
+});
+</script>

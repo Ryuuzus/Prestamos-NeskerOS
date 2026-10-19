@@ -12,12 +12,8 @@ use Illuminate\Database\Eloquent\Model;
  * DESCRIPCIÓN GENERAL:
  * Regla de validación para el campo "status" de un Aula o un Dispositivo.
  *
- *  - No se puede poner en "maintenance" si tiene reservaciones aprobadas sin completar
- *    (aunque todavía no hayan empezado).
- *  - Si está en uso ahora mismo (reservación aprobada que ya inició y no se ha completado),
- *    debe seguir en "occupied" hasta que la reservación se complete.
- *
- * Al crear un recurso nuevo la regla no aplica.
+ * No se puede poner en "maintenance" un recurso que tenga reservaciones APROBADAS sin completar
+ * (en curso, con devolución pendiente o futuras). Al crear un recurso nuevo la regla no aplica.
  * ==================================================================================================
  */
 class NoActiveReservations implements ValidationRule
@@ -34,22 +30,17 @@ class NoActiveReservations implements ValidationRule
 
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
-        if (! $this->resource || ! $this->resource->exists) {
+        if (! $this->resource || ! $this->resource->exists || $value !== 'maintenance') {
             return;
         }
 
-        $approved = fn () => Reservation::query()
+        $count = Reservation::query()
             ->approved()
-            ->where($this->foreignKey, $this->resource->getKey());
+            ->where($this->foreignKey, $this->resource->getKey())
+            ->count();
 
-        if ($value === 'maintenance' && ($count = $approved()->count()) > 0) {
+        if ($count > 0) {
             $fail("No se puede poner en mantenimiento: tiene {$count} reservación(es) aprobada(s) sin completar.");
-
-            return;
-        }
-
-        if ($value !== 'occupied' && $this->resource->status === 'occupied' && $approved()->started()->exists()) {
-            $fail('No se puede cambiar el estado: está en uso por una reservación aprobada. Márcala como completada primero.');
         }
     }
 }

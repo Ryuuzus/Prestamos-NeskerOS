@@ -34,7 +34,9 @@ class ClassroomController extends Controller
     {
         $search = trim((string) $request->input('search'));
 
+        // in_use = el aula tiene una reservación aprobada que ya inició y no se ha completado.
         $classrooms = Classroom::with('building')
+            ->withExists(['reservations as in_use' => fn ($query) => $query->approved()->started()])
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('classroom', 'LIKE', "%{$search}%")
