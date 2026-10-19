@@ -3,16 +3,18 @@
     Subvista reutilizable con los campos del formulario de reservación (Reservation Form Fields).
     Selectores opcionales de Aula y Dispositivo (solo los que no están en mantenimiento) y campos
     SEPARADOS de fecha y hora para el inicio y la entrega esperada.
-    Los límites de fechas y la duración mínima salen de config/reservations.php.
+    La anticipación mínima y la duración mínima salen de config/reservations.php.
 --================================================================================================== --}}
 
 @php
-    $maxDays  = (int) config('reservations.max_days_ahead', 7);
+    $minDays  = (int) config('reservations.min_days_in_advance', 7);
+    $maxDays  = config('reservations.max_days_ahead');
     $minHours = (int) config('reservations.min_duration_hours', 24);
     $minLabel = $minHours % 24 === 0 ? ($minHours / 24) . ' día(s)' : "{$minHours} hora(s)";
 
-    $minDate = now()->toDateString();
-    $maxDate = now()->addDays($maxDays)->toDateString();
+    // La primera fecha reservable es hoy + la anticipación mínima.
+    $minDate = now()->addDays($minDays)->toDateString();
+    $maxDate = $maxDays !== null ? now()->addDays((int) $maxDays)->toDateString() : null;
 
     // Muestra la hora como HH:MM (la columna TIME viene como HH:MM:SS).
     $hhmm = fn ($value) => $value ? \Carbon\Carbon::parse($value)->format('H:i') : '';
@@ -28,7 +30,8 @@
     {{-- Recordatorio de las reglas de reserva --}}
     <div class="col-12 mb-3">
         <div class="small" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px; color: #475569;">
-            Solo puedes reservar dentro de los próximos <strong>{{ $maxDays }} días</strong> y por al menos
+            Las reservaciones deben hacerse con al menos <strong>{{ $minDays }} días de anticipación</strong>
+            (desde el <strong>{{ now()->addDays($minDays)->format('d/m/Y') }}</strong>) y durar al menos
             <strong>{{ $minLabel }}</strong>. No se pueden reservar aulas ni dispositivos en mantenimiento.
         </div>
     </div>
@@ -72,7 +75,7 @@
         <label for="start_date" class="custom-label">Fecha de inicio</label>
         <input type="date" name="start_date" id="start_date"
                class="custom-input @error('start_date') is-invalid @enderror"
-               value="{{ $startDate }}" min="{{ $minDate }}" max="{{ $maxDate }}" required>
+               value="{{ $startDate }}" min="{{ $minDate }}" @if($maxDate) max="{{ $maxDate }}" @endif required>
     </div>
 
     <div class="col-md-2 mb-3">
@@ -87,7 +90,7 @@
         <label for="end_date" class="custom-label">Fecha de entrega esperada</label>
         <input type="date" name="end_date" id="end_date"
                class="custom-input @error('end_date') is-invalid @enderror"
-               value="{{ $endDate }}" min="{{ $minDate }}" max="{{ $maxDate }}" required>
+               value="{{ $endDate }}" min="{{ $minDate }}" @if($maxDate) max="{{ $maxDate }}" @endif required>
     </div>
 
     <div class="col-md-2 mb-3">

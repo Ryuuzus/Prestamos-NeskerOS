@@ -18,9 +18,10 @@ use Illuminate\Validation\Validator;
  * Reglas:
  *  - Se debe elegir un aula, un dispositivo, o ambos.
  *  - Fecha y hora van separadas: start_date + start_time, end_date + end_time.
- *  - El inicio no puede estar en el pasado.
- *  - La duración mínima y la ventana máxima salen de config/reservations.php
- *    (por defecto: al menos 24 horas, y todo dentro de los próximos 7 días).
+ *  - Anticipación mínima: el inicio debe ser al menos N días después de hoy
+ *    (por defecto 7), lo que también impide reservar en el pasado.
+ *  - Duración mínima (por defecto 24 horas). Los límites opcionales de anticipación máxima y de
+ *    duración máxima salen de config/reservations.php.
  *  - No se puede reservar un aula o dispositivo en mantenimiento.
  *  - No se puede reservar un recurso que ya tenga una reservación APROBADA que se cruce
  *    con el horario elegido.
@@ -85,24 +86,32 @@ class ReservationRequest extends FormRequest
             $start = Carbon::createFromFormat('Y-m-d H:i', $this->input('start_date') . ' ' . $this->input('start_time'));
             $end   = Carbon::createFromFormat('Y-m-d H:i', $this->input('end_date') . ' ' . $this->input('end_time'));
 
-            $now      = now();
-            $maxDays  = (int) config('reservations.max_days_ahead', 7);
-            $minHours = (int) config('reservations.min_duration_hours', 24);
-            $limit    = $now->copy()->addDays($maxDays);
+            $now         = now();
+            $minDays     = (int) config('reservations.min_days_in_advance', 7);
+            $minHours    = (int) config('reservations.min_duration_hours', 24);
+            $maxDays     = config('reservations.max_days_ahead');
+            $maxDuration = config('reservations.max_duration_hours');
+            $earliest    = $now->copy()->addDays($minDays);
 
-            if ($start->lt($now)) {
-                $validator->errors()->add('start_date', 'La fecha y hora de inicio no pueden estar en el pasado.');
+            // Anticipación mínima (esto también impide reservar en el pasado).
+            if ($start->lt($earliest)) {
+                $validator->errors()->add(
+                    'start_date',
+                    "Las reservaciones deben hacerse con al menos {$minDays} días de anticipación: el inicio no puede ser antes del {$earliest->format('d/m/Y H:i')}."
+                );
             }
 
             if ($end->lt($start->copy()->addHours($minHours))) {
                 $validator->errors()->add('end_date', 'La reservación debe durar al menos ' . $this->durationLabel($minHours) . '.');
             }
 
-            if ($end->gt($limit)) {
-                $validator->errors()->add(
-                    'end_date',
-                    "Solo se puede reservar dentro de los próximos {$maxDays} días: la entrega no puede pasar del {$limit->format('d/m/Y H:i')}."
-                );
+            // Límites opcionales (null en la configuración = sin límite).
+            if ($maxDays !== null && $start->gt($now->copy()->addDays((int) $maxDays))) {
+                $validator->errors()->add('start_date', "Solo se puede reservar con un máximo de {$maxDays} días de anticipación.");
+            }
+
+            if ($maxDuration !== null && $end->gt($start->copy()->addHours((int) $maxDuration))) {
+                $validator->errors()->add('end_date', 'La reservación no puede durar más de ' . $this->durationLabel((int) $maxDuration) . '.');
             }
 
             // Si el horario ya es inválido no tiene caso revisar recursos.

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Building;
+use App\Models\Reservation;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -12,7 +13,9 @@ use Illuminate\Validation\ValidationException;
  * DESCRIPCIÓN GENERAL:
  * Reglas de negocio del estado de un Edificio y su efecto sobre sus Aulas.
  *
- *  1. Un edificio NO puede pasar a "maintenance" si alguna de sus aulas está "occupied".
+ *  1. Un edificio NO puede pasar a "maintenance" si alguna de sus aulas está "occupied" o tiene
+ *     reservaciones aprobadas sin completar (las reservaciones se hacen con una semana de
+ *     anticipación, así que un aula puede estar libre hoy y tener una reservación aprobada futura).
  *  2. Al pasar a "maintenance", TODAS sus aulas pasan a "maintenance".
  *  3. Al volver a "available", sus aulas vuelven a "available" y desde ahí cada aula puede
  *     cambiar de forma individual (available / occupied / maintenance).
@@ -30,7 +33,7 @@ class BuildingStatusService
      * @param  array<string, mixed>  $data  Datos ya validados (name, floors, status).
      * @return int  Cantidad de aulas cuyo estado fue modificado por el cambio de estado del edificio.
      *
-     * @throws ValidationException  Si se intenta poner en mantenimiento un edificio con aulas ocupadas.
+     * @throws ValidationException  Si se intenta poner en mantenimiento un edificio con aulas en uso o reservadas.
      */
     public function update(Building $building, array $data): int
     {
@@ -38,18 +41,27 @@ class BuildingStatusService
             $newStatus     = $data['status'];
             $statusChanged = $building->status !== $newStatus;
 
-            // Regla 1: no se puede entrar a mantenimiento con aulas ocupadas.
+            // Regla 1: no se puede entrar a mantenimiento con aulas ocupadas o reservadas.
             if ($statusChanged && $newStatus === Building::STATUS_MAINTENANCE) {
                 // Se bloquean las aulas del edificio mientras se valida, para que nadie
                 // pueda marcar una como ocupada justo en este instante.
-                $occupied = $building->classrooms()
+                $classrooms = $building->classrooms()
                     ->lockForUpdate()
-                    ->get(['id', 'classroom', 'status'])
-                    ->where('status', 'occupied');
+                    ->get(['id', 'classroom', 'status']);
 
-                if ($occupied->isNotEmpty()) {
+                $reservedIds = Reservation::query()
+                    ->approved()
+                    ->whereIn('classroom_id', $classrooms->pluck('id'))
+                    ->pluck('classroom_id')
+                    ->unique();
+
+                $blocked = $classrooms->filter(
+                    fn ($classroom) => $classroom->status === 'occupied' || $reservedIds->contains($classroom->id)
+                );
+
+                if ($blocked->isNotEmpty()) {
                     throw ValidationException::withMessages([
-                        'status' => $this->occupiedMessage($occupied),
+                        'status' => $this->blockedMessage($blocked),
                     ])->errorBag('editBuilding' . $building->id);
                 }
             }
@@ -68,16 +80,16 @@ class BuildingStatusService
     }
 
     /**
-     * Mensaje de error con los nombres de las aulas ocupadas (máximo 5).
+     * Mensaje de error con los nombres de las aulas que lo impiden (máximo 5).
      */
-    private function occupiedMessage(Collection $occupied): string
+    private function blockedMessage(Collection $blocked): string
     {
-        $names = $occupied->pluck('classroom');
+        $names = $blocked->pluck('classroom');
         $shown = $names->take(5)->implode(', ');
         $rest  = $names->count() - 5;
 
         $list = $rest > 0 ? "{$shown} y {$rest} más" : $shown;
 
-        return "No se puede poner el edificio en mantenimiento porque tiene aulas ocupadas: {$list}.";
+        return "No se puede poner el edificio en mantenimiento porque tiene aulas ocupadas o con reservaciones aprobadas sin completar: {$list}.";
     }
 }

@@ -2,15 +2,24 @@
     DESCRIPCIÓN GENERAL:
     Barra lateral de navegación principal (Sidebar Component).
     Incluye la marca del sistema (NeskerOS) y la navegación condicional que despliega las opciones
-    del Dashboard y los módulos de administración (Edificios, Aulas, Dispositivos y Excel) únicamente
+    del Dashboard y los módulos de administración (Edificios, Aulas, Dispositivos, Excel, PDF e Historial) únicamente
     para usuarios con rol de administrador (`is_admin == 1`).
 --================================================================================================== --}}
+
+{{-- Datos de navegación: el administrador entra a su propio panel; el usuario, a sus reservaciones --}}
+@php
+    $isAdmin = auth()->check() && auth()->user()->is_admin == 1;
+    $homeUrl = $isAdmin ? route('admin.reservations.index') : route('reservations.index');
+    $dashboardActive = $isAdmin
+        ? request()->routeIs('admin.reservations.index')
+        : request()->routeIs('reservations.*');
+@endphp
 
 {{-- Contenedor principal de la barra lateral --}}
 <div class="d-flex flex-column flex-shrink-0 p-3 text-white bg-dark" style="width: 280px; min-height: 100%;">
     
     {{-- Logotipo y título de la aplicación --}}
-    <a href="{{ route('reservations.index') }}" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none">
+    <a href="{{ $homeUrl }}" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none">
         <i class="fa fa-boxes fs-4 me-2"></i>
         <span class="fs-5 fw-bold">NeskerOS</span>
     </a>
@@ -22,13 +31,13 @@
         
         {{-- Enlace general: Dashboard / Solicitudes --}}
         <li>
-            <a href="{{ route('reservations.index') }}" class="nav-link {{ request()->routeIs('reservations.*') ? 'active' : 'text-white' }}">
+            <a href="{{ $homeUrl }}" class="nav-link {{ $dashboardActive ? 'active' : 'text-white' }}">
                 <i class="fa fa-chart-line fa-fw me-2"></i> Dashboard
             </a>
         </li>
 
         {{-- Menú exclusivo para Administradores --}}
-        @if(auth()->check() && auth()->user()->is_admin == 1)
+        @if($isAdmin)
             
             <li class="mt-3 mb-1 px-3">
                 <span class="text-uppercase text-secondary small fw-bold" style="letter-spacing: 0.05em;">
@@ -69,6 +78,13 @@
             <li>
                 <a href="{{ route('pdf.exportar-todas') }}" class="nav-link {{ request()->routeIs('pdf.exportar-todas') ? 'active' : 'text-white' }}">
                     <i class="fa fa-file-pdf fa-fw me-2"></i> PDF
+                </a>
+            </li>
+
+            {{-- Módulo: Historial de reservaciones --}}
+            <li>
+                <a href="{{ route('reservations.history') }}" class="nav-link {{ request()->routeIs('reservations.history') ? 'active' : 'text-white' }}">
+                    <i class="fa fa-history fa-fw me-2"></i> Historial
                 </a>
             </li>
         @endif

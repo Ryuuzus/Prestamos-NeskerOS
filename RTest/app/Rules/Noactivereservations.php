@@ -12,9 +12,12 @@ use Illuminate\Database\Eloquent\Model;
  * DESCRIPCIÓN GENERAL:
  * Regla de validación para el campo "status" de un Aula o un Dispositivo.
  *
- * Si el recurso tiene reservaciones APROBADAS sin completar, su estado debe seguir siendo
- * "occupied". Así no se puede, por ejemplo, ponerlo en mantenimiento o en disponible a mano
- * mientras alguien lo tiene reservado. Al crear un recurso nuevo la regla no aplica.
+ *  - No se puede poner en "maintenance" si tiene reservaciones aprobadas sin completar
+ *    (aunque todavía no hayan empezado).
+ *  - Si está en uso ahora mismo (reservación aprobada que ya inició y no se ha completado),
+ *    debe seguir en "occupied" hasta que la reservación se complete.
+ *
+ * Al crear un recurso nuevo la regla no aplica.
  * ==================================================================================================
  */
 class NoActiveReservations implements ValidationRule
@@ -31,17 +34,22 @@ class NoActiveReservations implements ValidationRule
 
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
-        if (! $this->resource || ! $this->resource->exists || $value === 'occupied') {
+        if (! $this->resource || ! $this->resource->exists) {
             return;
         }
 
-        $count = Reservation::query()
+        $approved = fn () => Reservation::query()
             ->approved()
-            ->where($this->foreignKey, $this->resource->getKey())
-            ->count();
+            ->where($this->foreignKey, $this->resource->getKey());
 
-        if ($count > 0) {
-            $fail("No se puede cambiar el estado: tiene {$count} reservación(es) aprobada(s) sin completar. Márcalas como completadas primero.");
+        if ($value === 'maintenance' && ($count = $approved()->count()) > 0) {
+            $fail("No se puede poner en mantenimiento: tiene {$count} reservación(es) aprobada(s) sin completar.");
+
+            return;
+        }
+
+        if ($value !== 'occupied' && $this->resource->status === 'occupied' && $approved()->started()->exists()) {
+            $fail('No se puede cambiar el estado: está en uso por una reservación aprobada. Márcala como completada primero.');
         }
     }
 }

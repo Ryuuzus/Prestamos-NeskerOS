@@ -15,11 +15,14 @@ use Illuminate\View\View;
 /**
  * ==================================================================================================
  * DESCRIPCIÓN GENERAL:
- * Controlador de Gestión de Reservaciones (ReservationController).
+ * Controlador de Reservaciones para el USUARIO (ReservationController).
  *
- * Administra el ciclo de vida de las solicitudes de reserva de aulas y dispositivos.
- * La validación vive en ReservationRequest y las reglas de estado (aprobar, completar, liberar
- * recursos) en ReservationService.
+ * Cada usuario gestiona únicamente sus propias reservaciones: ver su lista, crear, editar y
+ * cancelar solicitudes pendientes. La validación vive en ReservationRequest y las reglas de
+ * estado en ReservationService.
+ *
+ * Las tareas del administrador (panel de activas, historial, aprobar, rechazar y completar) están
+ * en App\Http\Controllers\Admin\ReservationController.
  * ==================================================================================================
  */
 class ReservationController extends Controller
@@ -29,31 +32,30 @@ class ReservationController extends Controller
     }
 
     /**
-     * Muestra el listado de reservaciones filtrado según el rol del usuario autenticado.
+     * Lista las reservaciones del usuario autenticado.
+     * Los administradores trabajan desde su propio panel, así que se les redirige allí.
      */
-    public function index(Request $request): View
+    public function index(Request $request): View|RedirectResponse
     {
-        $query = Reservation::with(['classroom', 'device', 'user']);
+        if ((int) auth()->user()->is_admin === 1) {
+            return redirect()->route('admin.reservations.index');
+        }
+
+        $query = Reservation::with(['classroom', 'device', 'user'])
+            ->where('user_id', auth()->id());
 
         if ($request->filled('search')) {
-            $search = $request->search;
+            $search = trim((string) $request->input('search'));
 
             $query->where(function ($q) use ($search) {
                 $q->where('status', 'LIKE', "%{$search}%")
-                  ->orWhereHas('user', function ($userQuery) use ($search) {
-                      $userQuery->where('name', 'LIKE', "%{$search}%");
-                  });
+                  ->orWhereHas('classroom', fn ($c) => $c->where('classroom', 'LIKE', "%{$search}%"))
+                  ->orWhereHas('device', fn ($d) => $d->where('name', 'LIKE', "%{$search}%"));
             });
         }
 
-        $query->orderBy('created_at', 'desc');
+        $reservations = $query->orderBy('created_at', 'desc')->paginate(10)->withQueryString();
 
-        if ($this->isAdmin()) {
-            $reservations = $query->paginate(10)->withQueryString();
-            return view('admin.index', compact('reservations'));
-        }
-
-        $reservations = $query->where('user_id', auth()->id())->paginate(10)->withQueryString();
         return view('reservation.index', compact('reservations'));
     }
 
@@ -84,11 +86,11 @@ class ReservationController extends Controller
     }
 
     /**
-     * Muestra el formulario de edición (solo reservaciones pendientes).
+     * Muestra el formulario de edición (solo reservaciones propias y pendientes).
      */
     public function edit(Reservation $reservation): View|RedirectResponse
     {
-        $this->authorizeOwnerOrAdmin($reservation);
+        $this->authorizeOwner($reservation);
 
         if ($reservation->status !== Reservation::STATUS_PENDING) {
             return redirect()->route('reservations.index')
@@ -101,11 +103,11 @@ class ReservationController extends Controller
     }
 
     /**
-     * Valida y actualiza una reservación pendiente.
+     * Valida y actualiza una reservación propia y pendiente.
      */
     public function update(ReservationRequest $request, Reservation $reservation): RedirectResponse
     {
-        $this->authorizeOwnerOrAdmin($reservation);
+        $this->authorizeOwner($reservation);
 
         if ($reservation->status !== Reservation::STATUS_PENDING) {
             return redirect()->route('reservations.index')
@@ -119,14 +121,14 @@ class ReservationController extends Controller
     }
 
     /**
-     * Elimina / cancela una reservación. Si estaba aprobada, libera el recurso.
+     * Cancela una reservación propia. Un usuario solo puede cancelar solicitudes pendientes.
      */
     public function destroy(Reservation $reservation): RedirectResponse
     {
-        $this->authorizeOwnerOrAdmin($reservation);
+        $this->authorizeOwner($reservation);
 
         try {
-            $this->reservations->delete($reservation, $this->isAdmin());
+            $this->reservations->delete($reservation, false);
         } catch (ReservationException $e) {
             return redirect()->route('reservations.index')->with('error', $e->getMessage());
         }
@@ -136,81 +138,15 @@ class ReservationController extends Controller
     }
 
     // ----------------------------------------------------------------------
-    // MÉTODOS EXCLUSIVOS PARA EL ADMINISTRADOR
-    // ----------------------------------------------------------------------
-
-    /**
-     * Aprueba la reservación y marca el aula/dispositivo como ocupado.
-     */
-    public function approve(Reservation $reservation): RedirectResponse
-    {
-        $this->authorizeAdmin();
-
-        try {
-            $this->reservations->approve($reservation);
-        } catch (ReservationException $e) {
-            return back()->with('error', $e->getMessage());
-        }
-
-        return back()->with('success', 'La reservación ha sido aprobada.');
-    }
-
-    /**
-     * Rechaza la reservación registrando el motivo.
-     */
-    public function reject(Request $request, Reservation $reservation): RedirectResponse
-    {
-        $this->authorizeAdmin();
-
-        $request->validate([
-            'rejection_reason' => 'required|string|max:255',
-        ]);
-
-        try {
-            $this->reservations->reject($reservation, $request->rejection_reason);
-        } catch (ReservationException $e) {
-            return back()->with('error', $e->getMessage());
-        }
-
-        return back()->with('success', 'La reservación fue rechazada.');
-    }
-
-    /**
-     * Registra la entrega/devolución y libera el aula/dispositivo.
-     */
-    public function complete(Reservation $reservation): RedirectResponse
-    {
-        $this->authorizeAdmin();
-
-        try {
-            $this->reservations->complete($reservation);
-        } catch (ReservationException $e) {
-            return back()->with('error', $e->getMessage());
-        }
-
-        return back()->with('success', 'El equipo o aula ha sido marcado como entregado/devuelto.');
-    }
-
-    // ----------------------------------------------------------------------
     // AYUDAS PRIVADAS
     // ----------------------------------------------------------------------
 
-    private function isAdmin(): bool
-    {
-        return (int) auth()->user()->is_admin === 1;
-    }
-
-    private function authorizeAdmin(): void
-    {
-        abort_unless($this->isAdmin(), 403);
-    }
-
     /**
-     * Un usuario normal solo puede tocar sus propias reservaciones.
+     * Un usuario solo puede tocar sus propias reservaciones.
      */
-    private function authorizeOwnerOrAdmin(Reservation $reservation): void
+    private function authorizeOwner(Reservation $reservation): void
     {
-        abort_unless($this->isAdmin() || $reservation->user_id === auth()->id(), 403);
+        abort_unless($reservation->user_id === auth()->id(), 403);
     }
 
     /**

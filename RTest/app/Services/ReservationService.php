@@ -6,6 +6,7 @@ use App\Exceptions\ReservationException;
 use App\Models\Classroom;
 use App\Models\Device;
 use App\Models\Reservation;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -80,7 +81,7 @@ class ReservationService
         }
 
         $reservation->update([
-            'status'           => Reservation::STATUS_REJECTED,
+            'status' => Reservation::STATUS_REJECTED,
             'rejection_reason' => $reason,
         ]);
     }
@@ -100,7 +101,7 @@ class ReservationService
             }
 
             $reservation->update([
-                'status'             => Reservation::STATUS_COMPLETED,
+                'status' => Reservation::STATUS_COMPLETED,
                 'actual_return_time' => now(),
             ]);
 
@@ -133,6 +134,34 @@ class ReservationService
     }
 
     /**
+     * Marca como ocupados los recursos de reservaciones aprobadas que ya iniciaron.
+     */
+    public function activateStarted(): int
+    {
+        return DB::transaction(function (): int {
+            $reservations = Reservation::query()
+                ->approved()
+                ->started()
+                ->lockForUpdate()
+                ->get();
+            $changed = 0;
+
+            foreach ($reservations as $reservation) {
+                foreach ($this->resourcesOf($reservation) as [$resource]) {
+                    if ($resource->status === 'maintenance' || $resource->status === 'occupied') {
+                        continue;
+                    }
+
+                    $resource->update(['status' => 'occupied']);
+                    $changed++;
+                }
+            }
+
+            return $changed;
+        });
+    }
+
+    /**
      * Recalcula el estado de los recursos de la reservación:
      * "occupied" si les queda al menos una reservación aprobada; si no, "available".
      * Los recursos en mantenimiento no se tocan.
@@ -156,7 +185,7 @@ class ReservationService
     /**
      * Aula y/o dispositivo de la reservación, con la fila bloqueada para escritura.
      *
-     * @return array<int, array{0: \Illuminate\Database\Eloquent\Model, 1: string, 2: string, 3: string}>
+     * @return array<int, array{0: Model, 1: string, 2: string, 3: string}>
      */
     private function resourcesOf(Reservation $reservation): array
     {

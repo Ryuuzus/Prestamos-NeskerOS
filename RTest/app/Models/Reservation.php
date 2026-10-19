@@ -94,6 +94,14 @@ class Reservation extends Model
     }
 
     /**
+     * Reservaciones cuyo inicio (fecha + hora) ya llegó.
+     */
+    public function scopeStarted(Builder $query): Builder
+    {
+        return $query->whereRaw('TIMESTAMP(reservations.start_date, reservations.start_time) <= ?', [now()->format('Y-m-d H:i:s')]);
+    }
+
+    /**
      * Reservaciones cuyo horario se cruza con [$start, $end).
      * Dos reservaciones que se tocan en el borde (una termina cuando la otra empieza) NO se cruzan.
      *

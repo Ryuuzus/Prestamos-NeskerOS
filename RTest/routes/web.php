@@ -6,6 +6,7 @@ use App\Http\Controllers\BuildingController;
 use App\Http\Controllers\ClassroomController;
 use App\Http\Controllers\DeviceController;
 use App\Http\Controllers\ReservationController;
+use App\Http\Controllers\Admin\ReservationController as AdminReservationController;
 use App\Http\Controllers\PdfDownloadController;
 
 
@@ -17,7 +18,8 @@ Route::get('/google-auth/redirect', [GoogleAuthController::class, 'redirect']);
 Route::get('/google-auth/callback', [GoogleAuthController::class, 'callback']);
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::resource('reservations', ReservationController::class);
+    // Sin 'show': no existe vista de detalle y así /reservations/history no se confunde con reservations/{reservation}.
+    Route::resource('reservations', ReservationController::class)->except('show');
     Route::view('/ajustes', 'layouts.configuration')->name('configuration');
 });
 
@@ -42,10 +44,16 @@ Route::middleware(['auth', 'admin', 'verified'])->group(function () {
     Route::resource('classrooms', ClassroomController::class);
     Route::resource('devices', DeviceController::class);
 
+    // Panel de administración de reservaciones (pendientes y aprobadas)
+    Route::get('/admin/reservations', [AdminReservationController::class, 'index'])->name('admin.reservations.index');
+
+    // Historial de reservaciones (completadas y rechazadas)
+    Route::get('/reservations/history', [AdminReservationController::class, 'history'])->name('reservations.history');
+
     // Acciones administrativas de reservaciones
-    Route::patch('/reservations/{reservation}/approve', [ReservationController::class, 'approve'])->name('reservations.approve');
-    Route::patch('/reservations/{reservation}/reject', [ReservationController::class, 'reject'])->name('reservations.reject');
-    Route::patch('/reservations/{reservation}/complete', [ReservationController::class, 'complete'])->name('reservations.complete');
+    Route::patch('/reservations/{reservation}/approve', [AdminReservationController::class, 'approve'])->name('reservations.approve');
+    Route::patch('/reservations/{reservation}/reject', [AdminReservationController::class, 'reject'])->name('reservations.reject');
+    Route::patch('/reservations/{reservation}/complete', [AdminReservationController::class, 'complete'])->name('reservations.complete');
 
     // Rutas de PDF
     Route::get('/pdf/exportar-todas', [PdfDownloadController::class, 'exportarTodas'])->name('pdf.exportar-todas');
