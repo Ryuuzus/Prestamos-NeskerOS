@@ -2,24 +2,20 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
+/**
+ * Datos de demostración de NeskerOS. No modifica ni elimina datos existentes.
+ * Los seeders individuales prohíben su ejecución fuera de local/testing.
+ */
 class DatabaseSeeder extends Seeder
 {
-    use WithoutModelEvents;
-
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        $this->call([
+            InitialUsersSeeder::class,
+            DemoCatalogSeeder::class,
+            DemoReservationsSeeder::class,
         ]);
     }
 }

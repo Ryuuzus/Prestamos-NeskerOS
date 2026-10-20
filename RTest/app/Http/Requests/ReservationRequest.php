@@ -97,9 +97,9 @@ class ReservationRequest extends FormRequest
 
             $now         = now();
             $minDays     = (int) config('reservations.min_days_in_advance', 7);
-            $minHours    = (int) config('reservations.min_duration_hours', 24);
+            $minHours    = (int) config('reservations.min_duration_hours', 2);
             $maxDays     = config('reservations.max_days_ahead');
-            $maxDuration = config('reservations.max_duration_hours');
+            $maxDuration = config('reservations.max_duration_hours', 48);
             $earliest    = $now->copy()->addDays($minDays);
 
             // Anticipación mínima (esto también impide reservar en el pasado).
@@ -108,6 +108,20 @@ class ReservationRequest extends FormRequest
                     'start_date',
                     "Las reservaciones deben hacerse con al menos {$minDays} días de anticipación: el inicio no puede ser antes del {$earliest->format('d/m/Y H:i')}."
                 );
+            }
+
+            // Horario permitido: solo horas dentro de la jornada y en el paso configurado.
+            $open   = (int) config('reservations.open_hour', 7);
+            $close  = (int) config('reservations.close_hour', 21);
+            $slot   = max(5, (int) config('reservations.slot_minutes', 60));
+            $window = 'de ' . Carbon::createFromTime($open)->format('g:i A') . ' a ' . Carbon::createFromTime($close)->format('g:i A');
+
+            foreach ([['start_time', 'inicio', $start], ['end_time', 'entrega', $end]] as [$field, $label, $moment]) {
+                $minute = $moment->hour * 60 + $moment->minute;
+
+                if ($minute < $open * 60 || $minute > $close * 60 || ($minute - $open * 60) % $slot !== 0) {
+                    $validator->errors()->add($field, "La hora de {$label} debe estar {$window}, en intervalos de {$slot} minutos.");
+                }
             }
 
             if ($end->lt($start->copy()->addHours($minHours))) {
@@ -191,9 +205,13 @@ class ReservationRequest extends FormRequest
 
     private function durationLabel(int $hours): string
     {
-        return $hours % 24 === 0
-            ? ($hours / 24) . ' día(s)'
-            : "{$hours} hora(s)";
+        if ($hours % 24 === 0) {
+            $days = intdiv($hours, 24);
+
+            return $days . ($days === 1 ? ' día' : ' días');
+        }
+
+        return $hours . ($hours === 1 ? ' hora' : ' horas');
     }
 
     public function messages(): array

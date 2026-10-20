@@ -11,13 +11,12 @@ class IsAdmin
 {
     public function handle(Request $request, Closure $next): Response
     {
-        // Verifica si está logueado y si su columna is_admin es igual a 1
-        if (Auth::check() && Auth::user()->is_admin == 1) {
+        // Verifica rol vigente (role es la autoridad, is_admin es legado).
+        if (Auth::check() && Auth::user()->hasRole(\App\Models\User::ROLE_ADMIN)) {
             return $next($request);
         }
 
         // Si no es admin, lo regresamos a sus reservaciones con un error
-        return redirect()->route('reservations.index')
-            ->with('error', 'Acceso denegado. No tienes permisos de administrador.');
+        abort(403, 'Acceso denegado. No tienes permisos de administrador.');
     }
 }

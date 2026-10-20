@@ -10,7 +10,7 @@
 
 {{-- Contenido principal de la vista --}}
 @section('content')
-<div class="container mt-4">
+<div class="app-content">
 
     {{-- Notificaciones de la sesión (Éxito / Error) --}}
     @if(session('success'))
@@ -19,7 +19,7 @@
         </div>
     @endif
     @if(session('error'))
-        <div class="custom-alert" style="background-color: #fee2e2; color: #dc2626; border-color: #fecaca;">
+        <div class="custom-alert custom-alert-error">
             {{ session('error') }}
         </div>
     @endif
@@ -30,19 +30,19 @@
         <div class="table-header">
             <h4>Listado de Reservaciones</h4>
 
-            <div style="display: flex; align-items: center; gap: 15px;">
+            <div class="reservation-list-actions">
 
                 {{-- Formulario de búsqueda rápida --}}
-                <form action="{{ route('reservations.index') }}" method="GET" style="display: flex; margin: 0;">
-                    <input type="text" name="search" class="custom-input" placeholder="Search..." value="{{ request('search') }}" style="border-top-right-radius: 0; border-bottom-right-radius: 0; border-right: none; padding-top: 8px; padding-bottom: 8px; max-width: 250px;">
-                    <button type="submit" class="btn-submit" style="border-top-left-radius: 0; border-bottom-left-radius: 0; padding: 8px 16px;">
+                <form action="{{ route('reservations.index') }}" method="GET" class="reservation-search">
+                    <input type="text" name="search" class="form-control" placeholder="Buscar..." value="{{ request('search') }}">
+                    <button type="submit" class="btn-submit">
                         Buscar
                     </button>
                 </form>
 
                 {{-- Botón para ir a la vista de creación --}}
-                <a href="{{ route('reservations.create') }}" class="btn-create" style="padding: 8px 24px;">
-                    Create
+                <a href="{{ route('reservations.create') }}" class="btn-create">
+                    Nueva reservación
                 </a>
             </div>
         </div>
@@ -90,7 +90,7 @@
                                         <a href="{{ route('reservations.edit', $reservation->id) }}" class="btn-action btn-edit">Edit</a>
 
                                         {{-- Formulario para la cancelación / eliminación de la reservación --}}
-                                        <form action="{{ route('reservations.destroy', $reservation->id) }}" method="POST" onsubmit="return confirm('¿Seguro que deseas cancelar esta solicitud?');" style="margin: 0;">
+                                        <form action="{{ route('reservations.destroy', $reservation->id) }}" method="POST" onsubmit="return confirm('¿Seguro que deseas cancelar esta solicitud?');" class="m-0">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="btn-action btn-delete">Delete</button>

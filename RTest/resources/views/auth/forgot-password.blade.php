@@ -12,7 +12,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Recuperar Contraseña</title>
     <link href="https://fonts.bunny.net/css?family=Nunito:400,600,700" rel="stylesheet"> 
-    @vite(['resources/css/auth/forgot_password.css'])
+    @vite(['resources/css/global.css', 'resources/css/auth/forgot_password.css'])
 </head>
 <body>
     {{-- Contenedor principal de la tarjeta de recuperación --}}

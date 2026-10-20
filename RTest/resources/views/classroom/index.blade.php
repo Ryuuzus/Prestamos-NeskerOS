@@ -59,9 +59,11 @@
                             </a>
                         @endif
 
+                        @can('manage-catalogs')
                         <button type="button" class="btn-create text-nowrap" data-bs-toggle="modal" data-bs-target="#createModal">
                             {{ __('Create') }}
                         </button>
+                        @endcan
                     </div>
                 </div>
 
@@ -77,7 +79,9 @@
                                 <th>Aula</th>
                                 <th class="building-floors-column">Piso</th>
                                 <th class="building-status-column">Estado</th>
+                                @can('manage-catalogs')
                                 <th class="building-actions-column">Acciones</th>
+                                @endcan
                             </tr>
                         </thead>
                         <tbody>
@@ -101,6 +105,7 @@
                                         @endif
                                     </td>
 
+                                    @can('manage-catalogs')
                                     <td class="building-actions-column">
                                         <form action="{{ route('classrooms.destroy', $classroom->id) }}" method="POST" class="action-btns">
                                             @csrf
@@ -116,6 +121,7 @@
                                             </button>
                                         </form>
                                     </td>
+                                    @endcan
                                 </tr>
                             @empty
                                 <tr>
@@ -137,12 +143,14 @@
 </div>
 
 {{-- Modales de edición: fuera de la tabla (un <div> dentro de <tbody> es HTML inválido) --}}
+@can('manage-catalogs')
 @foreach ($classrooms as $classroom)
     @include('classroom.edit')
 @endforeach
 
 {{-- Modal de creación --}}
 @include('classroom.create', ['classroom' => new \App\Models\Classroom()])
+@endcan
 
 {{-- JS: pisos dinámicos según el edificio y reapertura del modal con errores --}}
 <script>

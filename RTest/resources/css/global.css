@@ -1,0 +1,491 @@
+:root {
+    --app-primary: #4f46e5;
+    --app-primary-hover: #4338ca;
+    --app-ink: #172033;
+    --app-muted: #64748b;
+    --app-border: #e2e8f0;
+    --app-canvas: #f4f7fb;
+    --app-surface: #fff;
+    --app-sidebar: #172033;
+    --bs-primary: var(--app-primary);
+    --bs-primary-rgb: 79, 70, 229;
+    --bs-link-color: var(--app-primary);
+    --bs-link-hover-color: var(--app-primary-hover);
+    --bs-body-color: var(--app-ink);
+    --bs-body-bg: var(--app-canvas);
+    --bs-border-color: var(--app-border);
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html {
+    min-width: 320px;
+    min-height: 100%;
+    scroll-behavior: smooth;
+}
+
+body {
+    min-width: 320px;
+    min-height: 100vh;
+    margin: 0;
+    color: var(--app-ink);
+    background: var(--app-canvas);
+    font-family: "Nunito", "Segoe UI", sans-serif;
+    line-height: 1.5;
+}
+
+button,
+input,
+select,
+textarea {
+    font: inherit;
+}
+
+a {
+    text-underline-offset: 0.16em;
+}
+
+.app-shell {
+    display: flex;
+    min-height: 100vh;
+}
+
+.app-main {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 100vh;
+}
+
+.app-main > main {
+    width: 100%;
+    min-width: 0;
+    padding: clamp(1rem, 2.5vw, 2rem) !important;
+}
+
+.app-main > main > .container-fluid {
+    max-width: 1600px;
+    margin-inline: auto;
+}
+
+.app-content {
+    width: 100%;
+    max-width: 1440px;
+    margin-inline: auto;
+}
+
+.app-content-narrow {
+    max-width: 960px;
+}
+
+.app-sidebar {
+    --bs-offcanvas-width: 280px;
+    flex: 0 0 280px;
+    width: 280px;
+    color: #fff;
+    background: var(--app-sidebar);
+}
+
+.app-sidebar .offcanvas-body {
+    padding: 0;
+    overflow-y: auto;
+}
+
+.app-sidebar-inner {
+    display: flex;
+    min-height: 100vh;
+    flex-direction: column;
+    padding: 1rem;
+    color: #fff;
+    background: var(--app-sidebar);
+}
+
+.app-sidebar-brand {
+    display: flex;
+    min-height: 56px;
+    align-items: center;
+    gap: 0.65rem;
+    color: #fff;
+    font-weight: 800;
+    letter-spacing: 0.01em;
+    text-decoration: none;
+}
+
+.app-sidebar-brand:hover {
+    color: #c7d2fe;
+}
+
+.app-sidebar-logo {
+    display: block;
+    width: 56px;
+    height: 56px;
+    flex: 0 0 56px;
+    object-fit: contain;
+}
+
+.app-sidebar-inner > hr {
+    border-color: rgb(255 255 255 / 12%);
+    opacity: 1;
+}
+
+.app-sidebar-inner .nav-link {
+    display: flex;
+    min-height: 42px;
+    align-items: center;
+    border-radius: 0.65rem;
+    color: rgb(255 255 255 / 78%) !important;
+    font-weight: 600;
+    transition: background-color 160ms ease, color 160ms ease;
+}
+
+.app-sidebar-inner .nav-link:hover,
+.app-sidebar-inner .nav-link:focus-visible {
+    color: #fff !important;
+    background: rgb(255 255 255 / 9%);
+}
+
+.app-sidebar-inner .nav-link.active {
+    color: #fff !important;
+    background: var(--app-primary);
+    box-shadow: 0 5px 14px rgb(79 70 229 / 24%);
+}
+
+.app-sidebar-section {
+    color: #a8b3ca !important;
+    letter-spacing: 0.08em;
+}
+
+.app-mobile-menu-button {
+    display: inline-flex;
+    width: 42px;
+    height: 42px;
+    flex: 0 0 42px;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--app-border);
+    border-radius: 0.7rem;
+    color: var(--app-ink);
+    background: #fff;
+}
+
+.app-mobile-menu-button:hover {
+    color: var(--app-primary);
+    border-color: #c7d2fe;
+}
+
+.app-page-title {
+    margin: 0;
+    color: var(--app-ink);
+    font-size: clamp(1.35rem, 2vw, 1.8rem);
+    font-weight: 800;
+    line-height: 1.25;
+}
+
+.app-page-subtitle {
+    margin: 0.35rem 0 0;
+    color: var(--app-muted);
+}
+
+.btn-primary,
+.btn-submit,
+.btn-create {
+    border-color: var(--app-primary);
+    color: #fff;
+    background: var(--app-primary);
+}
+
+.btn-primary:hover,
+.btn-submit:hover,
+.btn-create:hover {
+    border-color: var(--app-primary-hover);
+    color: #fff;
+    background: var(--app-primary-hover);
+}
+
+.btn,
+.btn-submit,
+.btn-create,
+.btn-cancel,
+.btn-action {
+    min-height: 38px;
+}
+
+.btn:focus-visible,
+.btn-submit:focus-visible,
+.btn-create:focus-visible,
+.btn-cancel:focus-visible,
+.btn-action:focus-visible,
+.app-sidebar-inner .nav-link:focus-visible {
+    outline: 3px solid rgb(99 102 241 / 35%);
+    outline-offset: 2px;
+}
+
+.form-control,
+.form-select,
+.custom-input {
+    min-height: 42px;
+    border-color: #d5dcea;
+    border-radius: 0.65rem;
+    color: var(--app-ink);
+    background-color: #fff;
+}
+
+.form-control:focus,
+.form-select:focus,
+.custom-input:focus {
+    border-color: #818cf8;
+    box-shadow: 0 0 0 0.2rem rgb(79 70 229 / 14%);
+}
+
+.form-label,
+.custom-label {
+    color: #344054;
+    font-weight: 700;
+}
+
+.table-wrapper,
+.card,
+.excel-container,
+.agenda-day,
+.agenda-month-scroller {
+    border: 1px solid var(--app-border);
+    border-radius: 0.9rem;
+    background: var(--app-surface);
+    box-shadow: 0 8px 24px rgb(15 23 42 / 5%);
+}
+
+.table-wrapper {
+    overflow: hidden;
+}
+
+.table-header {
+    gap: 1rem;
+    padding: clamp(1rem, 2vw, 1.5rem);
+}
+
+.table-header h1,
+.table-header h2,
+.table-header h3,
+.table-header h4,
+.table-header h5 {
+    color: var(--app-ink);
+}
+
+.reservation-list-actions {
+    display: flex;
+    min-width: min(100%, 440px);
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.75rem;
+}
+
+.reservation-search {
+    display: flex;
+    min-width: min(100%, 280px);
+    flex: 1 1 250px;
+    margin: 0;
+}
+
+.reservation-search .form-control {
+    min-width: 0;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.reservation-search .btn-submit {
+    flex: 0 0 auto;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    padding-inline: 1rem;
+}
+
+.table-responsive {
+    max-width: 100%;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+}
+
+.custom-table,
+.table {
+    margin-bottom: 0;
+}
+
+.custom-table thead th {
+    color: #475467;
+    background: #f8f9fc;
+}
+
+.custom-table tbody tr:last-child > *,
+.table tbody tr:last-child > * {
+    border-bottom: 0;
+}
+
+.pagination {
+    flex-wrap: wrap;
+    gap: 0.2rem;
+}
+
+.pagination .page-link {
+    border-radius: 0.5rem;
+}
+
+.alert,
+.custom-alert,
+.validation-summary {
+    overflow-wrap: anywhere;
+}
+
+.dropdown-menu {
+    max-width: min(22rem, calc(100vw - 1.5rem));
+    border-color: var(--app-border);
+    border-radius: 0.8rem;
+    box-shadow: 0 12px 32px rgb(15 23 42 / 12%);
+}
+
+.modal-content {
+    border: 1px solid var(--app-border);
+    border-radius: 1rem;
+    box-shadow: 0 24px 70px rgb(15 23 42 / 20%);
+}
+
+.app-footer {
+    border-top: 1px solid var(--app-border);
+    background: #fff;
+}
+
+.app-footer-inner {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 0.5rem 1.5rem;
+    padding: 1rem clamp(1rem, 2.5vw, 2rem);
+    color: var(--app-muted);
+    font-size: 0.875rem;
+}
+
+.excel-main-container {
+    display: grid;
+    width: 100%;
+    max-width: 1200px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: stretch;
+    gap: 1.25rem;
+    margin-inline: auto;
+}
+
+.excel-container {
+    width: auto;
+    min-width: 0;
+    margin: 0;
+    padding: clamp(1.1rem, 2.2vw, 1.75rem);
+}
+
+.excel-title {
+    color: var(--app-ink);
+    font-size: 1.1rem;
+    line-height: 1.4;
+}
+
+.excel-export-link {
+    display: inline-flex;
+    min-height: 40px;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem 0.9rem;
+    border: 1px solid #c7d2fe;
+    border-radius: 0.6rem;
+    color: var(--app-primary);
+    background: #eef2ff;
+    font-weight: 700;
+}
+
+.excel-export-link:hover {
+    color: var(--app-primary-hover);
+    background: #e0e7ff;
+}
+
+@media (max-width: 991.98px) {
+    .app-sidebar {
+        position: fixed;
+        top: 0;
+        bottom: 0;
+        z-index: 1055;
+        height: 100vh;
+        border: 0;
+    }
+
+    .app-sidebar .offcanvas-body {
+        height: calc(100% - 64px);
+    }
+
+    .app-sidebar-inner {
+        min-height: 100%;
+    }
+
+    .excel-main-container {
+        max-width: 760px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 767.98px) {
+    .app-main > main {
+        padding: 1rem !important;
+    }
+
+    .table-header {
+        align-items: stretch !important;
+    }
+
+    .table-header > :not(form):not(div) {
+        max-width: 100%;
+    }
+
+    .table-header form,
+    .table-header .input-group {
+        min-width: 0;
+    }
+
+    .reservation-list-actions,
+    .reservation-search {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .reservation-list-actions > .btn-create {
+        justify-content: center;
+    }
+
+    .custom-table {
+        min-width: 700px;
+    }
+
+    .excel-main-container {
+        max-width: 540px;
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .app-footer-inner {
+        justify-content: center;
+        text-align: center;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+    }
+}

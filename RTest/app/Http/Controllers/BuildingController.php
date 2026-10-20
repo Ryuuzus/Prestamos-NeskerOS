@@ -80,6 +80,10 @@ class BuildingController extends Controller
      */
     public function show(Building $building): View
     {
+        $building->load([
+            'classrooms' => fn ($query) => $query->orderBy('floor')->orderBy('classroom'),
+        ]);
+
         return view('building.show', compact('building'));
     }
 

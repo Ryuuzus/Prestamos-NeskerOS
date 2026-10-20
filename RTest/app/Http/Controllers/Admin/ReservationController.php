@@ -20,7 +20,7 @@ use Illuminate\View\View;
  * - history():  historial de reservaciones finalizadas (completadas y rechazadas).
  * - approve(), reject(), complete(): ciclo de vida de una reservación.
  *
- * El acceso está protegido por el middleware 'admin' en routes/web.php, por lo que aquí no se
+ * El acceso está protegido por 'can:review-reservations' en routes/web.php, por lo que aquí no se
  * repite la verificación de rol. Las reglas de negocio viven en ReservationService.
  * ==================================================================================================
  */

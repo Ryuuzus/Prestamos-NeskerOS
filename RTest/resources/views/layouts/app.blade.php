@@ -25,27 +25,36 @@
 
     {{-- Bootstrap CSS CDN (Cargar primero para establecer la base) --}}
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 
     {{-- Hojas de estilo personalizadas compiladas vía Vite (Tienen prioridad sobre Bootstrap) --}}
 
+    @vite(['resources/css/global.css'])
     @vite(['resources/css/crud/crud.css'])
     @vite(['resources/css/layouts/header.css'])
     @vite(['resources/css/layouts/sidebar.css'])
     @vite(['resources/css/excel/excel.css'])
+    @stack('styles')
 
-</head> 
-<body style="background-color: #f4f7f6; font-family: 'Nunito', sans-serif;"> 
+</head>
+<body>
     
     {{-- Contenedor principal de la interfaz flexible --}}
-    <div class="d-flex">
+    <div class="app-shell">
             
         {{-- Menú de navegación lateral / Sidebar --}}
-        <aside class="main-sidebar">
-            @include('includes.sidebar')
+        <aside class="offcanvas-lg offcanvas-start app-sidebar" tabindex="-1" id="appSidebar" aria-labelledby="appSidebarTitle">
+            <div class="offcanvas-header d-lg-none border-bottom border-secondary-subtle">
+                <span id="appSidebarTitle" class="text-white fw-bold">NeskerOS</span>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Cerrar menú"></button>
+            </div>
+            <div class="offcanvas-body">
+                @include('components.sidebar')
+            </div>
         </aside>
 
         {{-- Área principal de contenido general --}}
-        <div class="flex-grow-1 bg-light d-flex flex-column" style="min-height: 100vh;">
+        <div class="app-main">
             
             {{-- Barra superior de navegación / Header --}}
             @include('includes.header')
@@ -55,17 +64,12 @@
                 @yield('content')
             </main>
 
-
+            @include('includes.footer')
 
         </div>
     </div>
 
     {{-- Librerías de JavaScript de Bootstrap --}}
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-</body> 
-{{-- Pie de página global  --}}
-
-<footer>
-    @include('includes.footer')
-</footer>
+</body>
 </html>

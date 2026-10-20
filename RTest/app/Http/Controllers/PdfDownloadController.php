@@ -4,49 +4,74 @@ namespace App\Http\Controllers;
 
 use App\Models\Reservation;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\View\View;
 use Spatie\LaravelPdf\Facades\Pdf;
 use Spatie\LaravelPdf\PdfBuilder;
-use Illuminate\View\View;
 
 /**
- * ==================================================================================================
- * DESCRIPCIÓN GENERAL:
- * Controlador de Generación y Descarga de PDF (PdfDownloadController).
- * ==================================================================================================
+ * Lista y genera comprobantes individuales de préstamos.
+ * Nunca se confía en el ID de la URL sin comprobar el permiso del usuario.
  */
 class PdfDownloadController extends Controller
 {
-    /**
-     * Genera y descarga el PDF individual para una reservación específica.
-     */
-    public function index(Reservation $reservation): ?View
+    /** Recibos disponibles de las reservaciones propias (aprobadas o completadas). */
+    public function receipts(): View
     {
-        $reservation->load(['user', 'classroom.building', 'device']);
+        Gate::authorize('manage-own-reservations');
 
-        return view('pdf.index', compact('reservation'));
+        $reservations = Reservation::query()
+            ->with(['classroom.building', 'device'])
+            ->where('user_id', auth()->id())
+            ->whereIn('status', [Reservation::STATUS_APPROVED, Reservation::STATUS_COMPLETED])
+            ->orderByDesc('start_date')
+            ->orderByDesc('start_time')
+            ->paginate(10);
 
+        return view('receipt.index', compact('reservations'));
     }
 
+    /** Vista HTML del comprobante para el titular, moderador o administrador. */
+    public function index(Reservation $reservation): View
+    {
+        $this->ensureCanView($reservation);
+        $reservation->load(['user', 'classroom.building', 'device']);
+
+        return view('pdf.receipt', compact('reservation'));
+    }
+
+    /** Descarga directa de comprobante individual. */
     public function __invoke(Reservation $reservation): PdfBuilder
     {
+        $this->ensureCanView($reservation);
         $reservation->load(['user', 'classroom.building', 'device']);
 
-        return Pdf::view('pdf.index', ['reservation' => $reservation])
+        return Pdf::view('pdf.receipt', compact('reservation'))
             ->format('a4')
-            ->download("solicitud-{$reservation->getKey()}.pdf");
+            ->download("recibo-prestamo-{$reservation->getKey()}.pdf");
     }
 
-    /**
-     * Genera y descarga un PDF consolidado con todas las reservaciones registradas.
-     */
+    /** Conserva el nombre utilizado en rutas existentes. */
+    public function exportar(Reservation $reservation): PdfBuilder
+    {
+        return $this->__invoke($reservation);
+    }
+
+    /** Exportación masiva heredada, exclusiva del administrador. */
     public function exportarTodas(): PdfBuilder
     {
-        $reservations = Reservation::with(['user', 'classroom.building', 'device'])
-            ->latest()
-            ->get();
+        Gate::authorize('export-pdf');
 
-        return Pdf::view('pdf.index', ['reservations' => $reservations])
+        $reservations = Reservation::with(['user', 'classroom.building', 'device'])
+            ->latest()->get();
+
+        return Pdf::view('pdf.index', compact('reservations'))
             ->format('a4')
             ->download('solicitudes-' . Carbon::now()->format('Y-m-d') . '.pdf');
+    }
+
+    private function ensureCanView(Reservation $reservation): void
+    {
+        Gate::authorize('view-receipt', $reservation);
     }
 }

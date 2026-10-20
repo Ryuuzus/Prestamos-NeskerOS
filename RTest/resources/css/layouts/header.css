@@ -3,7 +3,12 @@
    ========================================= */
 
 .neskeros-header {
+    position: sticky;
+    top: 0;
+    z-index: 1020;
     border-bottom: 1px solid #e2e8f0;
+    background: rgb(255 255 255 / 94%) !important;
+    backdrop-filter: blur(12px);
 }
 
 .neskeros-title {
@@ -94,4 +99,26 @@
 .btn-logout:hover {
     background-color: #fecaca;
     color: #b91c1c;
+}
+
+.profile-button-name {
+    max-width: min(32vw, 240px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.profile-dropdown-menu {
+    width: min(320px, calc(100vw - 1.5rem));
+}
+
+@media (max-width: 575.98px) {
+    .profile-button-name {
+        max-width: 34vw;
+    }
+
+    .btn-profile-dropdown {
+        max-width: calc(100vw - 5rem);
+        padding-right: 0.65rem;
+    }
 }

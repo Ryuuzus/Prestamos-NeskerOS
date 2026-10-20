@@ -66,7 +66,9 @@ class GoogleAuthController extends Controller
             $user->markEmailAsVerified();
         }
 
-        return redirect()->route('reservations.index');
+        return $user->hasAnyRole(User::ROLE_MODERATOR, User::ROLE_ADMIN)
+            ? redirect()->route('admin.reservations.index')
+            : redirect()->route('reservations.index');
     }
 
 }

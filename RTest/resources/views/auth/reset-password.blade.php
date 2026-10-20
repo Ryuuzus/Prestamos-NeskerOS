@@ -13,7 +13,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nueva Contraseña</title>
     <link href="https://fonts.bunny.net/css?family=Nunito:400,600,700" rel="stylesheet"> 
-    @vite(['resources/css/auth/reset_password.css'])
+    @vite(['resources/css/global.css', 'resources/css/auth/reset_password.css'])
 </head>
 <body>
     {{-- Contenedor del formulario de restablecimiento --}}

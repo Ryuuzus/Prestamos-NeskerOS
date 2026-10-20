@@ -52,9 +52,11 @@
                         @endif
 
                         {{-- Botón para abrir el modal de creación --}}
+                        @can('manage-catalogs')
                         <button type="button" class="btn-create text-nowrap" data-bs-toggle="modal" data-bs-target="#createModal">
                             <i class="fa fa-plus"></i> {{ __('Create') }}
                         </button>
+                        @endcan
 
                     </div>
                 </div>
@@ -68,7 +70,9 @@
                                 <th class="building-name-column">Edificio</th>
                                 <th class="building-floors-column">Pisos</th>
                                 <th class="building-status-column">Estado</th>
+                                @can('manage-catalogs')
                                 <th class="building-actions-column">Acciones</th>
+                                @endcan
                             </tr>
                         </thead>
                         <tbody>
@@ -86,6 +90,7 @@
                                     </td>
                                     
                                     {{-- Acciones de edición (vía modal) y eliminación del registro --}}
+                                    @can('manage-catalogs')
                                     <td class="building-actions-column">
                                         <form action="{{ route('buildings.destroy', $building->id) }}" method="POST" class="action-btns">
                                             @csrf
@@ -104,10 +109,13 @@
                                             </button>
                                         </form>
                                     </td>
+                                    @endcan
                                 </tr>
                                 
                                 {{-- Inclusión de la vista parcial del modal de edición --}}
-                                @include('building.edit')
+                                @can('manage-catalogs')
+                                    @include('building.edit')
+                                @endcan
                             @endforeach
                         </tbody>
                     </table>
@@ -124,7 +132,9 @@
 </div>
 
 {{-- Modal parcial para la creación de un nuevo edificio --}}
+@can('manage-catalogs')
 @include('building.create', ['building' => new \App\Models\Building()])
+@endcan
 
 {{-- Reabre únicamente el modal que contiene los errores de validación del CRUD de edificios. --}}
 @php

@@ -7,9 +7,13 @@ use App\Http\Requests\ReservationRequest;
 use App\Models\Classroom;
 use App\Models\Device;
 use App\Models\Reservation;
+use App\Services\AvailabilityService;
 use App\Services\ReservationService;
+use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 
 /**
@@ -17,7 +21,7 @@ use Illuminate\View\View;
  * DESCRIPCIÓN GENERAL:
  * Controlador de Reservaciones para el USUARIO (ReservationController).
  *
- * Cada usuario gestiona únicamente sus propias reservaciones: ver su lista, crear, editar y
+ * El rol user gestiona únicamente sus propias reservaciones: ver su lista, crear, editar y
  * cancelar solicitudes pendientes. La validación vive en ReservationRequest y las reglas de
  * estado en ReservationService.
  *
@@ -33,13 +37,11 @@ class ReservationController extends Controller
 
     /**
      * Lista las reservaciones del usuario autenticado.
-     * Los administradores trabajan desde su propio panel, así que se les redirige allí.
+     * Solo el rol user puede consultar y gestionar sus solicitudes propias.
      */
     public function index(Request $request): View|RedirectResponse
     {
-        if ((int) auth()->user()->is_admin === 1) {
-            return redirect()->route('admin.reservations.index');
-        }
+        Gate::authorize('manage-own-reservations');
 
         $query = Reservation::with(['classroom', 'device', 'user'])
             ->where('user_id', auth()->id());
@@ -65,6 +67,8 @@ class ReservationController extends Controller
      */
     public function create(): View
     {
+        Gate::authorize('manage-own-reservations');
+
         $reservation = new Reservation();
         [$classrooms, $devices] = $this->reservableResources();
 
@@ -76,6 +80,8 @@ class ReservationController extends Controller
      */
     public function store(ReservationRequest $request): RedirectResponse
     {
+        Gate::authorize('manage-own-reservations');
+
         Reservation::create($request->validated() + [
             'user_id' => auth()->id(),
             'status'  => Reservation::STATUS_PENDING,
@@ -90,6 +96,8 @@ class ReservationController extends Controller
      */
     public function edit(Reservation $reservation): View|RedirectResponse
     {
+        Gate::authorize('manage-own-reservations');
+
         $this->authorizeOwner($reservation);
 
         if ($reservation->status !== Reservation::STATUS_PENDING) {
@@ -107,6 +115,8 @@ class ReservationController extends Controller
      */
     public function update(ReservationRequest $request, Reservation $reservation): RedirectResponse
     {
+        Gate::authorize('manage-own-reservations');
+
         $this->authorizeOwner($reservation);
 
         if ($reservation->status !== Reservation::STATUS_PENDING) {
@@ -125,6 +135,8 @@ class ReservationController extends Controller
      */
     public function destroy(Reservation $reservation): RedirectResponse
     {
+        Gate::authorize('manage-own-reservations');
+
         $this->authorizeOwner($reservation);
 
         try {
@@ -135,6 +147,42 @@ class ReservationController extends Controller
 
         return redirect()->route('reservations.index')
             ->with('success', 'Reservación eliminada correctamente.');
+    }
+
+    /**
+     * Horas no disponibles (JSON) para el aula / dispositivo / cantidad elegidos, a partir de la
+     * fecha de inicio indicada. El formulario las usa para deshabilitar las horas ocupadas.
+     */
+    public function availability(Request $request, AvailabilityService $availability): JsonResponse
+    {
+        Gate::authorize('manage-own-reservations');
+
+        $data = $request->validate([
+            'classroom_id'    => ['nullable', 'integer', 'exists:classrooms,id'],
+            'device_id'       => ['nullable', 'integer', 'exists:devices,id'],
+            'device_quantity' => ['nullable', 'integer', 'min:1', 'max:9999'],
+            'date'            => ['required', 'date_format:Y-m-d'],
+        ]);
+
+        // Desde el inicio de la fecha elegida hasta el último momento en que podría terminar la reservación.
+        $from = Carbon::createFromFormat('Y-m-d', $data['date'])->startOfDay();
+        $days = (int) ceil((int) config('reservations.max_duration_hours', 48) / 24) + 1;
+        $to   = $from->copy()->addDays($days);
+
+        $intervals = $availability->blockedIntervals(
+            ! empty($data['classroom_id']) ? Classroom::find($data['classroom_id']) : null,
+            ! empty($data['device_id']) ? Device::find($data['device_id']) : null,
+            (int) ($data['device_quantity'] ?? 1),
+            $from,
+            $to,
+        );
+
+        return response()->json([
+            'blocked' => array_map(
+                fn (array $interval) => [$interval[0]->format('Y-m-d H:i:s'), $interval[1]->format('Y-m-d H:i:s')],
+                $intervals,
+            ),
+        ]);
     }
 
     // ----------------------------------------------------------------------

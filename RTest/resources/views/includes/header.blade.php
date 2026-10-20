@@ -7,7 +7,10 @@
 
 {{-- Barra de navegación superior --}}
 <header class="bg-white shadow-sm neskeros-header">
-    <div class="container-fluid px-4 py-3 d-flex justify-content-end align-items-center">
+    <div class="container-fluid px-3 px-md-4 py-2 py-md-3 d-flex justify-content-between justify-content-lg-end align-items-center">
+        <button type="button" class="app-mobile-menu-button d-lg-none" data-bs-toggle="offcanvas" data-bs-target="#appSidebar" aria-controls="appSidebar" aria-label="Abrir menú">
+            <i class="fa fa-bars" aria-hidden="true"></i>
+        </button>
 
         {{-- Menú desplegable con información del usuario autenticado --}}
         <div class="user-profile dropdown">
@@ -20,7 +23,7 @@
 
                 </div>
                 
-                <span class="fw-semibold text-dark">{{ Auth::user()->name }}</span>
+                <span class="fw-semibold text-dark profile-button-name">{{ Auth::user()->name }}</span>
                 <i class="fa fa-chevron-down text-muted ms-1 chevron-icon"></i>
             </button>
 
@@ -37,6 +40,7 @@
                 
                 {{-- Botón para cerrar sesión mediante JavaScript --}}
                 <div class="d-grid gap-3">
+                    <a href="{{ route('configuration') }}" class="btn btn-settings fw-semibold">Ajustes de cuenta</a>
 
                     <a href="{{ route('logout') }}" class="btn btn-logout fw-semibold d-flex align-items-center justify-content-center gap-2"
                        onclick="event.preventDefault(); document.getElementById('logout-form').submit();">

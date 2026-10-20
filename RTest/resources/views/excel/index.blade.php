@@ -10,6 +10,9 @@
 {{-- Contenido principal de la vista --}}
 @section('content')
 <div class="excel-main-container">
+    @cannot('import-data')
+        <p class="text-muted">Modo consulta: puedes exportar información a Excel. La importación está reservada al administrador.</p>
+    @endcannot
 
     {{-- Notificaciones globales de la sesión (Éxito / Error / Validaciones) --}}
 
@@ -43,6 +46,7 @@
 
         {{-- Formulario para la subida de archivos de Dispositivos --}}
 
+        @can('import-data')
         <form action="{{ route('devices.import') }}" method="POST" enctype="multipart/form-data" class="excel-form">
             @csrf
             <label>
@@ -54,6 +58,7 @@
                 Importar Dispositivos
             </button>
         </form>
+        @endcan
 
         {{-- Enlace para exportar la lista de Dispositivos --}}
 
@@ -70,6 +75,7 @@
 
         {{-- Formulario para la subida de archivos de Edificios --}}
 
+        @can('import-data')
         <form action="{{ route('buildings.import') }}" method="POST" enctype="multipart/form-data" class="excel-form">
             @csrf
             <label>
@@ -81,6 +87,7 @@
                 Importar Edificios
             </button>
         </form>
+        @endcan
 
         {{-- Enlace para exportar la lista de Edificios --}}
 
@@ -97,6 +104,7 @@
 
         {{-- Formulario para la subida de archivos de Aulas --}}
 
+        @can('import-data')
         <form action="{{ route('classrooms.import') }}" method="POST" enctype="multipart/form-data" class="excel-form">
             @csrf
             <label>
@@ -108,6 +116,7 @@
                 Importar Aulas
             </button>
         </form>
+        @endcan
 
         {{-- Enlace para exportar la lista de Aulas --}}
 

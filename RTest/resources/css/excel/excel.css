@@ -1,14 +1,5 @@
 /* Estilos para el módulo de Excel de Dispositivos */
 
-.excel-container {
-    background-color: #ffffff;
-    padding: 2rem;
-    border-radius: 0.5rem;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    width: 24rem; /* Equivalente a w-96 */
-    margin: 2rem auto;
-}
-
 .excel-title {
     font-size: 1.25rem;
     font-weight: 600;
@@ -82,4 +73,14 @@
     border-radius: 0.5rem;
     margin-bottom: 1rem;
     font-size: 0.875rem;
+}
+
+@media (max-width: 575.98px) {
+    .excel-container {
+        padding: 1.1rem;
+    }
+
+    .excel-input-file {
+        font-size: 0.8rem;
+    }
 }

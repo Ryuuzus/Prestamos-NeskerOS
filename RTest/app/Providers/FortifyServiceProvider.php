@@ -76,11 +76,9 @@ class FortifyServiceProvider extends ServiceProvider
         });
 
         $this->app->singleton(LoginResponse::class, function () {
-            if (Auth::user()->is_admin == 1) {
-                return redirect()->route('reservations.index');
-            }
-            
-            return redirect()->route('reservations.index');
+            return Auth::user()->hasAnyRole(\App\Models\User::ROLE_MODERATOR, \App\Models\User::ROLE_ADMIN)
+                ? redirect()->route('admin.reservations.index')
+                : redirect()->route('reservations.index');
         });
     }
 }
