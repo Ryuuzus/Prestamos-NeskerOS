@@ -11,7 +11,7 @@ use App\Http\Controllers\Admin\UserRoleController;
 use App\Http\Controllers\PdfDownloadController;
 use App\Http\Controllers\ReservationAgendaController;
 
-Route::get('/', fn () => redirect()->route('login'));
+Route::get('/', fn () => redirect()->route('agenda.index'));
 Route::get('/google-auth/redirect', [GoogleAuthController::class, 'redirect']);
 Route::get('/google-auth/callback', [GoogleAuthController::class, 'callback']);
 
