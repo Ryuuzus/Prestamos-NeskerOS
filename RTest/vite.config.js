@@ -7,9 +7,11 @@ export default defineConfig({
             input: [
                 'resources/sass/app.scss',
                 'resources/js/app.js',
+                'resources/js/form-validation.js',
                 'resources/css/app.css',
                 'resources/css/global.css',
                 'resources/css/agenda.css',
+                'resources/css/reservations.css',
                 'resources/css/crud/crud.css',
                 'resources/css/layouts/header.css',
                 'resources/css/layouts/sidebar.css',

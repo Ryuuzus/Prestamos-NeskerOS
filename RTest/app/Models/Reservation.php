@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * ==================================================================================================
@@ -23,10 +24,21 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class Reservation extends Model
 {
-    public const STATUS_PENDING   = 'pending';
-    public const STATUS_APPROVED  = 'approved';
-    public const STATUS_REJECTED  = 'rejected';
+    public const STATUS_PENDING = 'pending';
+
+    public const STATUS_APPROVED = 'approved';
+
+    public const STATUS_REJECTED = 'rejected';
+
     public const STATUS_COMPLETED = 'completed';
+
+    public const STATUS_CANCELLED = 'cancelled';
+
+    public const STATUS_EXPIRED = 'expired';
+
+    public const STATUS_NO_SHOW = 'no_show';
+
+    public const CLOSED_STATUSES = ['completed', 'rejected', 'cancelled', 'expired', 'no_show'];
 
     /**
      * Atributos asignables de forma masiva.
@@ -45,6 +57,9 @@ class Reservation extends Model
         'status',
         'rejection_reason',
         'actual_return_time',
+        'key_issued_at', 'key_returned_at', 'key_released_at',
+        'devices_issued_at', 'devices_returned', 'devices_returned_at', 'devices_released_at',
+        'key_custody_unverified', 'devices_custody_unverified', 'closed_at', 'closure_reason',
     ];
 
     /**
@@ -55,9 +70,13 @@ class Reservation extends Model
     protected function casts(): array
     {
         return [
-            'start_date'         => 'date',
-            'end_date'           => 'date',
+            'start_date' => 'date',
+            'end_date' => 'date',
             'actual_return_time' => 'datetime',
+            'key_issued_at' => 'datetime', 'key_returned_at' => 'datetime', 'key_released_at' => 'datetime',
+            'devices_issued_at' => 'datetime', 'devices_returned_at' => 'datetime', 'devices_released_at' => 'datetime',
+            'devices_returned' => 'integer', 'device_quantity' => 'integer',
+            'key_custody_unverified' => 'boolean', 'devices_custody_unverified' => 'boolean', 'closed_at' => 'datetime',
         ];
     }
 
@@ -67,6 +86,40 @@ class Reservation extends Model
     protected function startAt(): Attribute
     {
         return Attribute::get(fn () => $this->combine($this->start_date, $this->start_time));
+    }
+
+    /** Older completions were stored in UTC before the local operational timezone was configured. */
+    protected function actualReturnTime(): Attribute
+    {
+        return Attribute::get(function (?string $value): ?Carbon {
+            if ($value === null) {
+                return null;
+            }
+            $legacy = $this->status === self::STATUS_COMPLETED && ! $this->closed_at
+                && ! $this->key_issued_at && ! $this->devices_issued_at;
+
+            return Carbon::parse($value, $legacy ? 'UTC' : config('app.timezone'))->setTimezone(config('app.timezone'));
+        });
+    }
+
+    protected function startDate(): Attribute
+    {
+        return Attribute::make(set: fn ($value) => Carbon::parse($value)->toDateString());
+    }
+
+    protected function endDate(): Attribute
+    {
+        return Attribute::make(set: fn ($value) => Carbon::parse($value)->toDateString());
+    }
+
+    protected function startTime(): Attribute
+    {
+        return Attribute::make(set: fn ($value) => Carbon::parse($value)->format('H:i:s'));
+    }
+
+    protected function endTime(): Attribute
+    {
+        return Attribute::make(set: fn ($value) => Carbon::parse($value)->format('H:i:s'));
     }
 
     /**
@@ -83,7 +136,7 @@ class Reservation extends Model
             return null;
         }
 
-        return Carbon::parse($date->format('Y-m-d') . ' ' . $time);
+        return Carbon::parse($date->format('Y-m-d').' '.$time);
     }
 
     /**
@@ -99,7 +152,8 @@ class Reservation extends Model
      */
     public function scopeStarted(Builder $query): Builder
     {
-        return $query->whereRaw('TIMESTAMP(reservations.start_date, reservations.start_time) <= ?', [now()->format('Y-m-d H:i:s')]);
+        return $query->where(fn ($q) => $q->where('start_date', '<', now()->toDateString())
+            ->orWhere(fn ($q) => $q->where('start_date', now()->toDateString())->where('start_time', '<=', now()->format('H:i:s'))));
     }
 
     /**
@@ -111,8 +165,69 @@ class Reservation extends Model
     public function scopeOverlapping(Builder $query, CarbonInterface $start, CarbonInterface $end): Builder
     {
         return $query
-            ->whereRaw('TIMESTAMP(reservations.start_date, reservations.start_time) < ?', [$end->format('Y-m-d H:i:s')])
-            ->whereRaw('TIMESTAMP(reservations.end_date, reservations.end_time) > ?', [$start->format('Y-m-d H:i:s')]);
+            ->where(fn ($q) => $q->where('start_date', '<', $end->toDateString())
+                ->orWhere(fn ($q) => $q->where('start_date', $end->toDateString())->where('start_time', '<', $end->format('H:i:s'))))
+            ->where(fn ($q) => $q->where('end_date', '>', $start->toDateString())
+                ->orWhere(fn ($q) => $q->where('end_date', $start->toDateString())->where('end_time', '>', $start->format('H:i:s'))));
+    }
+
+    public function scopeKeyOutstanding(Builder $query): Builder
+    {
+        return $query->approved()->where(fn ($q) => $q->where('key_custody_unverified', true)
+            ->orWhere(fn ($q) => $q->whereNotNull('key_issued_at')->whereNull('key_returned_at')));
+    }
+
+    public function scopeDevicesOutstanding(Builder $query): Builder
+    {
+        return $query->approved()->where(fn ($q) => $q->where('devices_custody_unverified', true)
+            ->orWhere(fn ($q) => $q->whereNotNull('devices_issued_at')->whereColumn('devices_returned', '<', 'device_quantity')));
+    }
+
+    public function hasUnverifiedCustody(): bool
+    {
+        return $this->key_custody_unverified || $this->devices_custody_unverified;
+    }
+
+    public function hasIssuedResources(): bool
+    {
+        return $this->key_issued_at !== null || $this->devices_issued_at !== null;
+    }
+
+    public function hasOutstandingResources(): bool
+    {
+        return $this->hasUnverifiedCustody() || ($this->key_issued_at && ! $this->key_returned_at)
+            || ($this->devices_issued_at && $this->devices_returned < $this->device_quantity);
+    }
+
+    public function canCancel(): bool
+    {
+        return in_array($this->status, ['pending', 'approved'], true)
+            && ! $this->hasIssuedResources() && ! $this->hasUnverifiedCustody();
+    }
+
+    public function statusLabel(): string
+    {
+        if ($this->status === self::STATUS_APPROVED) {
+            if ($this->hasUnverifiedCustody()) {
+                return 'Por verificar entrega anterior';
+            }
+            if ($this->hasOutstandingResources()) {
+                return $this->end_at->lte(now()) ? 'Devolución atrasada' : 'En préstamo';
+            }
+
+            return $this->end_at->lte(now()) ? 'Sin recoger / por cerrar' : 'Aprobada · pendiente de recogida';
+        }
+
+        return match ($this->status) {
+            'pending' => 'Pendiente', 'completed' => 'Completada', 'rejected' => 'Rechazada',
+            'cancelled' => 'Cancelada', 'expired' => 'Vencida sin aprobación', 'no_show' => 'Sin recoger',
+            default => $this->status,
+        };
+    }
+
+    public function events(): HasMany
+    {
+        return $this->hasMany(ReservationEvent::class);
     }
 
     /**

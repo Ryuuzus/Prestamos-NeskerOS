@@ -5,27 +5,18 @@ namespace App\Console\Commands;
 use App\Services\ReservationService;
 use Illuminate\Console\Command;
 
-/**
- * ==================================================================================================
- * DESCRIPCIÓN GENERAL:
- * Pone en "occupied" las aulas y dispositivos cuya reservación aprobada ya llegó a su fecha y hora
- * de inicio. Se programa para correr cada minuto (ver routes/console.php).
- *
- * Si este comando no corre, los horarios siguen protegidos (los cruces se validan por fecha y hora),
- * pero el estado "occupied" no se reflejará en las aulas y dispositivos.
- * ==================================================================================================
- */
+/** Reconciles elapsed requests without assuming physical delivery or return. */
 class ActivateReservations extends Command
 {
     protected $signature = 'reservations:activate';
 
-    protected $description = 'Marca como ocupados las aulas y dispositivos cuya reservación aprobada ya inició';
+    protected $description = 'Cierra solicitudes vencidas y reservas sin recoger; conserva préstamos pendientes de devolución';
 
     public function handle(ReservationService $reservations): int
     {
-        $changed = $reservations->activateStarted();
+        $changed = $reservations->reconcileDue();
 
-        $this->info("Recursos marcados como ocupados: {$changed}");
+        $this->info("Reservaciones actualizadas: {$changed}");
 
         return self::SUCCESS;
     }

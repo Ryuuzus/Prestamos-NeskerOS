@@ -3,70 +3,61 @@
 namespace App\Imports;
 
 use App\Models\Building;
-use Maatwebsite\Excel\Concerns\ToModel;
+use App\Rules\CatalogRules;
 use Illuminate\Database\Eloquent\Model;
+use Maatwebsite\Excel\Concerns\SkipsEmptyRows;
+use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithValidation;
-use Maatwebsite\Excel\Concerns\SkipsEmptyRows;
 
-/**
- * ==================================================================================================
- * DESCRIPCIÓN GENERAL:
- * Clase de Importación de Edificios (BuildingImport).
- * 
- * Gestiona el procesamiento e importación masiva de edificios desde archivos Excel/CSV.
- * Convierte tipos de datos previa validación, crea instancias del modelo Building y aplica
- * validaciones para garantizar la integridad de la base de datos.
- * ==================================================================================================
- */
-class BuildingImport implements ToModel, WithHeadingRow, SkipsEmptyRows, WithValidation
+class BuildingImport implements SkipsEmptyRows, ToModel, WithHeadingRow, WithValidation
 {
-    /**
-     * Prepara y convierte los valores de entrada a sus tipos correspondientes antes de validar.
-     */
-    public function prepareForValidation($data, $index)
-    {
-        if (isset($data['name'])) {
-            $data['name'] = (string) $data['name'];
+    public int $importedRows = 0;
 
+    public int $duplicateRows = 0;
+
+    public function isEmptyWhen(array $row): bool
+    {
+        $name = CatalogRules::normalize((string) ($row['name'] ?? ''));
+        if ($name !== '' && mb_strlen($name) <= CatalogRules::NAME_MAX && Building::where('name', $name)->exists()) {
+            $this->duplicateRows++;
+
+            return true;
         }
-        if (isset($data['floors'])) {
-            $data['floors'] = (int) $data['floors'];
-        }
+
+        return false;
+    }
+
+    public function prepareForValidation(array $data, int $index): array
+    {
+        $data['name'] = CatalogRules::normalize(isset($data['name']) ? (string) $data['name'] : null);
+        $data['status'] = $data['status'] ?? 'available';
 
         return $data;
     }
 
-    /**
-     * Mapea cada fila procesada del archivo a una nueva instancia del modelo Building.
-     */
     public function model(array $row): ?Model
     {
-        $name   = $row['name'] ?? null;
-        $floors = $row['floors'] ?? null;
-
-        if (!$name || !$floors) {
-
-            return null;
-        }
+        $this->importedRows++;
 
         return new Building([
-            'name'   => $name,
-
-            'floors' => $floors,
+            'name' => $row['name'],
+            'floors' => $row['floors'],
+            'status' => $row['status'],
         ]);
     }
 
-    /**
-     * Define las reglas de validación aplicables a las filas de la hoja de cálculo.
-
-     */
     public function rules(): array
     {
         return [
-            '*.name'   => ['required', 'string', 'max:100', 'unique:buildings,name'],
-            '*.floors' => ['required', 'integer', 'min:1'],
-
+            'name' => [...CatalogRules::name(), 'unique:buildings,name'],
+            'floors' => ['bail', 'required', 'integer', 'min:1', 'max:'.CatalogRules::FLOORS_MAX],
+            'status' => ['required', 'in:available,maintenance'],
         ];
+    }
+
+    public function customValidationMessages(): array
+    {
+        return CatalogRules::importMessages(array_keys($this->rules()));
     }
 }

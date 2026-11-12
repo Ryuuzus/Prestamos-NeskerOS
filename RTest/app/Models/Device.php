@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\AvailabilityService;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -50,7 +51,7 @@ class Device extends Model
         return Attribute::get(function () {
             $inUse = array_key_exists('units_in_use', $this->attributes)
                 ? (int) $this->attributes['units_in_use']
-                : (int) $this->reservations()->approved()->started()->sum('device_quantity');
+                : app(AvailabilityService::class)->deviceUnitsInUseNow($this);
 
             return max(0, (int) $this->quantity - $inUse);
         });

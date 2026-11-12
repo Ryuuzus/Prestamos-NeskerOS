@@ -33,8 +33,8 @@ class DeviceRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         $this->merge([
-            'name'          => trim((string) $this->input('name')),
-            'serial_number' => trim((string) $this->input('serial_number')),
+            'name' => is_string($this->input('name')) ? trim($this->input('name')) : $this->input('name'),
+            'serial_number' => is_string($this->input('serial_number')) ? trim($this->input('serial_number')) : $this->input('serial_number'),
         ]);
     }
 
@@ -42,20 +42,22 @@ class DeviceRequest extends FormRequest
     {
         // Con binding implícito la ruta entrega el modelo; con ID plano entrega el valor.
         $routeParam = $this->route('device');
-        $deviceId   = $routeParam instanceof Device ? $routeParam->getKey() : $routeParam;
+        $deviceId = $routeParam instanceof Device ? $routeParam->getKey() : $routeParam;
 
         return [
-            'name' => ['required', 'string', 'max:100'],
+            'name' => ['bail', 'required', 'string', 'max:100'],
 
             'serial_number' => [
+                'bail',
                 'required',
                 'string',
                 'max:50',
-                Rule::unique((new Device())->getTable(), 'serial_number')->ignore($deviceId),
+                Rule::unique((new Device)->getTable(), 'serial_number')->ignore($deviceId),
             ],
 
             // La cantidad no puede bajar de las unidades que las reservaciones aprobadas usan a la vez.
             'quantity' => [
+                'bail',
                 'required',
                 'integer',
                 'min:1',
@@ -64,6 +66,7 @@ class DeviceRequest extends FormRequest
             ],
 
             'status' => [
+                'bail',
                 'required',
                 Rule::in(['available', 'maintenance']),
                 // No se puede poner en mantenimiento un dispositivo con reservaciones aprobadas sin completar.
@@ -76,21 +79,21 @@ class DeviceRequest extends FormRequest
     {
         return [
             'name.required' => 'El nombre del dispositivo es obligatorio.',
-            'name.string'   => 'El nombre del dispositivo debe ser texto.',
-            'name.max'      => 'El nombre del dispositivo no puede superar los 100 caracteres.',
+            'name.string' => 'El nombre del dispositivo debe ser texto.',
+            'name.max' => 'El nombre del dispositivo no puede superar los 100 caracteres.',
 
             'serial_number.required' => 'El número de serie es obligatorio.',
-            'serial_number.string'   => 'El número de serie debe ser texto.',
-            'serial_number.max'      => 'El número de serie no puede superar los 50 caracteres.',
-            'serial_number.unique'   => 'Ya existe un dispositivo con ese número de serie.',
+            'serial_number.string' => 'El número de serie debe ser texto.',
+            'serial_number.max' => 'El número de serie no puede superar los 50 caracteres.',
+            'serial_number.unique' => 'Ya existe un dispositivo con ese número de serie.',
 
             'quantity.required' => 'La cantidad es obligatoria.',
-            'quantity.integer'  => 'La cantidad debe ser un número entero.',
-            'quantity.min'      => 'La cantidad debe ser al menos 1.',
-            'quantity.max'      => 'La cantidad no puede ser mayor a 9999.',
+            'quantity.integer' => 'La cantidad debe ser un número entero.',
+            'quantity.min' => 'La cantidad debe ser al menos 1.',
+            'quantity.max' => 'La cantidad no puede ser mayor a 9999.',
 
             'status.required' => 'Debes seleccionar un estado.',
-            'status.in'       => 'El estado seleccionado no es válido.',
+            'status.in' => 'El estado seleccionado no es válido.',
         ];
     }
 }

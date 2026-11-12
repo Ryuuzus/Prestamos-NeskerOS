@@ -1,52 +1,19 @@
-{{-- ==================================================================================================
-    DESCRIPCIÓN GENERAL:
-    Vista para el registro de una nueva reservación (Create Reservation View).
-    Despliega el contenedor de formulario con manejo de errores de validación e inyecta la plantilla
-    reutilizable `reservation.form` para procesar la creación vía POST hacia 'reservations.store'.
---================================================================================================== --}}
-
 @extends('layouts.app')
-
-{{-- Contenido principal de la vista --}}
 @section('content')
-<div class="container mt-4">
-    <div class="card">
-        
-        {{-- Encabezado de la tarjeta --}}
-        <div class="card-header">
-            <h4>Crear reservación</h4>
-        </div>
-        
-        <div class="card-body">
-            
-            {{-- Despliegue de errores de validación --}}
-            @if ($errors->any())
-                <div class="alert alert-danger">
-                    <ul class="mb-0">
-
-                        @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
-
-            {{-- Formulario para la creación de reservación --}}
-            <form method="POST" action="{{ route('reservations.store') }}">
-                @csrf
-                
-                {{-- Inclusión del formulario de campos reutilizable --}}
-                @include('reservation.form')
-
-                {{-- Botones de acción del formulario --}}
-
-                <div class="mt-4" style="display: flex; gap: 10px;">
-                    <button type="submit" class="btn-submit">Guardar Reservación</button>
-                    <a href="{{ route('reservations.index') }}" class="btn-cancel">Cancelar</a>
-                </div>
-            </form>
-
-        </div>
+<div class="app-content app-content-narrow reservation-page">
+    <div class="reservation-navigation">
+        <a href="{{ route('reservations.index') }}" class="reservation-text-link"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i>Mis reservaciones</a>
+        @include('reservation.guide-link')
     </div>
+    <div class="reservation-page-heading"><h1 class="app-page-title">Nueva reservación</h1></div>
+    @include('reservation.alerts')
+    <form method="POST" action="{{ route('reservations.store') }}" class="reservation-form-panel">
+        @csrf
+        @include('reservation.form')
+        <div class="reservation-form-actions">
+            <button type="submit" class="btn-submit">Enviar solicitud <i class="fa-solid fa-arrow-right ms-2" aria-hidden="true"></i></button>
+            <a href="{{ route('reservations.index') }}" class="btn-cancel">Cancelar</a>
+        </div>
+    </form>
 </div>
 @endsection

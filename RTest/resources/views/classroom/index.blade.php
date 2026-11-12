@@ -36,13 +36,13 @@
 
                 {{-- Encabezado: título, buscador y botón Create --}}
                 <div class="table-header d-flex flex-wrap justify-content-between align-items-center gap-3">
-                    <h4 id="card_title" class="m-0">{{ __('Aulas') }}</h4>
+                    <div class="catalog-heading"><h4 id="card_title" class="m-0">{{ __('Aulas') }}</h4><x-guide-button :href="route('help.catalogs').'#classrooms'" /></div>
 
                     <div class="d-flex align-items-center gap-2 flex-grow-1 justify-content-md-end">
 
                         <form action="{{ route('classrooms.index') }}" method="GET" class="m-0 d-flex" style="max-width: 300px; width: 100%;">
                             <div class="input-group">
-                                <input type="text" name="search" class="form-control custom-input"
+                                <input type="text" name="search" maxlength="{{ \App\Rules\CatalogRules::SEARCH_MAX }}" title="Máximo 100 caracteres" aria-label="Buscar, máximo 100 caracteres" class="form-control custom-input"
                                        placeholder="Search..." value="{{ request('search') }}"
                                        style="border-top-right-radius: 0; border-bottom-right-radius: 0;">
                                 <button type="submit" class="btn-submit"
@@ -165,7 +165,7 @@ document.addEventListener("DOMContentLoaded", function () {
         const selectedOption = buildingSelect.options[buildingSelect.selectedIndex];
         if (!selectedOption || !selectedOption.value) return;
 
-        const maxFloors = parseInt(selectedOption.getAttribute('data-floors'));
+        const maxFloors = Math.min({{ \App\Rules\CatalogRules::FLOORS_MAX }}, parseInt(selectedOption.getAttribute('data-floors'), 10));
         if (isNaN(maxFloors)) return;
 
         for (let i = 1; i <= maxFloors; i++) {
@@ -185,10 +185,19 @@ document.addEventListener("DOMContentLoaded", function () {
         const floorSelect = document.querySelector(buildingSelect.getAttribute('data-target'));
         if (!floorSelect) return;
 
+        const statusSelect = buildingSelect.form.querySelector('[name="status"]');
+        function syncMaintenance() {
+            const maintenance = buildingSelect.selectedOptions[0]?.dataset.status === 'maintenance';
+            const available = statusSelect?.querySelector('option[value="available"]');
+            if (available) available.disabled = maintenance;
+            if (maintenance && statusSelect) statusSelect.value = 'maintenance';
+        }
+        syncMaintenance();
         populateFloors(buildingSelect, floorSelect, floorSelect.getAttribute('data-selected-floor'));
 
         buildingSelect.addEventListener('change', function () {
             populateFloors(buildingSelect, floorSelect, null);
+            syncMaintenance();
         });
     });
 

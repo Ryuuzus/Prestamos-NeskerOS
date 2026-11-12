@@ -28,6 +28,7 @@
                     <button type="submit" class="btn-submit">{{ __('Update') }}</button>
                 </div>
             </form>
+            @include('components.emergency-maintenance', ['type' => 'building', 'resource' => $building])
         </div>
     </div>
 </div>

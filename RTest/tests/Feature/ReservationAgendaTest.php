@@ -32,9 +32,10 @@ class ReservationAgendaTest extends TestCase
         }
     }
 
-    public function test_the_agenda_requires_authentication(): void
+    public function test_the_agenda_and_guide_require_authentication(): void
     {
         $this->get(route('agenda.index'))->assertRedirect(route('login'));
+        $this->get(route('reservations.guide'))->assertRedirect(route('login'));
     }
 
     public function test_it_lists_approved_resources_but_not_pending_resources(): void

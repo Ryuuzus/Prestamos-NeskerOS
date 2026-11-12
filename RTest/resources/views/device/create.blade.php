@@ -15,7 +15,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
 
-            <form action="{{ route('devices.store') }}" method="POST" novalidate>
+            <form action="{{ route('devices.store') }}" method="POST">
                 @csrf
 
                 {{-- Cuerpo: resumen de errores + campos --}}

@@ -58,21 +58,16 @@
      data-min-duration="{{ $minHours * 60 }}"
      data-max-duration="{{ $maxHours * 60 }}">
 
-    {{-- Recordatorio de las reglas de reserva --}}
-    <div class="col-12 mb-3">
-        <div class="small" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px; color: #475569;">
-            Reserva con al menos <strong>{{ $minDays }} días de anticipación</strong>
-            (desde el <strong>{{ now()->addDays($minDays)->format('d/m/Y') }}</strong>), de
-            <strong>{{ $slots[array_key_first($slots)] ?? '' }}</strong> a
-            <strong>{{ $slots[array_key_last($slots)] ?? '' }}</strong>, por entre
-            <strong>{{ $fmtDuration($minHours) }}</strong> y <strong>{{ $fmtDuration($maxHours) }}</strong>.
-            Las horas que no están disponibles aparecen deshabilitadas.
-        </div>
-    </div>
+    <div class="col-12"><div class="reservation-rule-strip">
+        <span><i class="fa-regular fa-calendar" aria-hidden="true"></i><strong>{{ $minDays }} días</strong> de anticipación</span>
+        <span><i class="fa-regular fa-clock" aria-hidden="true"></i><strong>{{ $minHours }}–{{ $maxHours }} horas</strong> de duración</span>
+        <span><i class="fa-regular fa-sun" aria-hidden="true"></i><strong>{{ sprintf('%02d:00', $openHour) }}–{{ sprintf('%02d:00', $closeHour) }}</strong></span>
+    </div></div>
+    <div class="col-12"><div class="reservation-form-section"><span>1</span><h2>Elige los recursos</h2></div><p class="small text-muted">Un aula, equipos o ambos.</p></div>
 
     {{-- Campo: Selección opcional de Aula --}}
     <div class="col-md-6 mb-3">
-        <label for="classroom_id" class="custom-label">Aula (Opcional)</label>
+        <label for="classroom_id" class="custom-label">Aula</label>
         <select name="classroom_id" id="classroom_id" class="custom-input @error('classroom_id') is-invalid @enderror">
             <option value="">Ninguna</option>
             @if(isset($classrooms) && $classrooms->count() > 0)
@@ -88,7 +83,7 @@
 
     {{-- Campo: Selección opcional de Dispositivo --}}
     <div class="col-md-4 mb-3">
-        <label for="device_id" class="custom-label">Dispositivo (Opcional)</label>
+        <label for="device_id" class="custom-label">Equipo</label>
         <select name="device_id" id="device_id" class="custom-input @error('device_id') is-invalid @enderror">
             <option value="">Ninguno</option>
             @if(isset($devices) && $devices->count() > 0)
@@ -108,9 +103,10 @@
         <input type="number" name="device_quantity" id="device_quantity"
                class="custom-input @error('device_quantity') is-invalid @enderror"
                value="{{ old('device_quantity', $reservation->device_quantity ?? 1) }}"
-               min="1" step="1">
+               min="1" max="9999" step="1" required>
     </div>
 
+    <div class="col-12"><div class="reservation-form-section mt-3"><span>2</span><h2>Define el horario</h2></div></div>
     {{-- Inicio: fecha y hora por separado --}}
     <div class="col-md-4 mb-3">
         <label for="start_date" class="custom-label">Fecha de inicio</label>
@@ -131,14 +127,14 @@
 
     {{-- Entrega esperada: fecha y hora por separado --}}
     <div class="col-md-4 mb-3">
-        <label for="end_date" class="custom-label">Fecha de entrega esperada</label>
+        <label for="end_date" class="custom-label">Fecha de devolución</label>
         <input type="date" name="end_date" id="end_date"
                class="custom-input @error('end_date') is-invalid @enderror"
                value="{{ $endDate }}" min="{{ $minDate }}" required>
     </div>
 
     <div class="col-md-2 mb-3">
-        <label for="end_time" class="custom-label">Hora de entrega</label>
+        <label for="end_time" class="custom-label">Hora de devolución</label>
         <select name="end_time" id="end_time" class="custom-input @error('end_time') is-invalid @enderror" required>
             <option value="">--</option>
             @foreach($slots as $value => $label)
@@ -146,6 +142,7 @@
             @endforeach
         </select>
     </div>
+
 
 </div>
 
@@ -181,6 +178,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
     let blocked = [];   // intervalos [inicio, fin) no disponibles, en minutos
     let requestId = 0;
+    let pendingRequest;
+
+    function validateResources() {
+        classroom.setCustomValidity(!classroom.value && !device.value ? 'Selecciona al menos un aula o un dispositivo.' : '');
+    }
+    classroom.addEventListener('change', validateResources);
+    device.addEventListener('change', validateResources);
+    validateResources();
 
     const isBlocked = (t) => blocked.some(([a, b]) => a <= t && t < b);
     const nextBlockStart = (t) => blocked.reduce((min, [a]) => (a > t && a < min ? a : min), Infinity);
@@ -297,6 +302,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // Pide al servidor los horarios no disponibles y vuelve a calcular las horas elegibles.
     async function loadBlocked() {
         const current = ++requestId;
+        pendingRequest?.abort();
         const date = startDate.value;
 
         if (!date || (!classroom.value && !device.value)) {
@@ -305,6 +311,11 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
+        if (!startDate.checkValidity() || (device.value && !qty.checkValidity())) {
+            return;
+        }
+
+        pendingRequest = new AbortController();
         const params = new URLSearchParams({ date });
         if (classroom.value) params.set('classroom_id', classroom.value);
         if (device.value) {
@@ -316,6 +327,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const response = await fetch(cfg.url + '?' + params.toString(), {
                 headers: { 'Accept': 'application/json' },
                 credentials: 'same-origin',
+                signal: pendingRequest.signal,
             });
             if (!response.ok) throw new Error('availability');
 

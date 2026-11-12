@@ -2,17 +2,21 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Classroom;
+use App\Exports\ClassroomExport;
+use App\Http\Requests\ClassroomRequest;
+use App\Imports\ClassroomImport;
 use App\Models\Building;
+use App\Models\Classroom;
+use App\Rules\NoActiveReservations;
+use App\Services\CatalogSpreadsheetService;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use App\Http\Requests\ClassroomRequest;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
-use App\Exports\ClassroomExport;
-use App\Imports\ClassroomImport;
-use Maatwebsite\Excel\Facades\Excel;
 
 /**
  * ==================================================================================================
@@ -36,11 +40,11 @@ class ClassroomController extends Controller
 
         // in_use = el aula tiene una reservación aprobada que ya inició y no se ha completado.
         $classrooms = Classroom::with('building')
-            ->withExists(['reservations as in_use' => fn ($query) => $query->approved()->started()])
+            ->withExists(['reservations as in_use' => fn ($query) => $query->keyOutstanding()])
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('classroom', 'LIKE', "%{$search}%")
-                      ->orWhereHas('building', fn ($b) => $b->where('name', 'LIKE', "%{$search}%"));
+                        ->orWhereHas('building', fn ($b) => $b->where('name', 'LIKE', "%{$search}%"));
                 });
             })
             ->orderBy('id')
@@ -92,7 +96,24 @@ class ClassroomController extends Controller
      */
     public function update(ClassroomRequest $request, Classroom $classroom): RedirectResponse
     {
-        $classroom->update($request->validated());
+        DB::transaction(function () use ($request, $classroom) {
+            $classroom = Classroom::lockForUpdate()->findOrFail($classroom->id);
+            $data = $request->validated();
+            $building = Building::lockForUpdate()->findOrFail($data['buildings_id']);
+            Validator::make($data, [
+                'status' => [new NoActiveReservations($classroom, 'classroom_id')],
+            ])->validate();
+            if ($building->status === 'maintenance' && $data['status'] !== 'maintenance') {
+                throw ValidationException::withMessages(['status' => 'El edificio está en mantenimiento.']);
+            }
+            if ((int) $data['buildings_id'] !== (int) $classroom->buildings_id && $classroom->reservations()->whereIn('status', ['pending', 'approved'])->exists()) {
+                throw ValidationException::withMessages(['buildings_id' => 'No puedes mover un aula de edificio mientras tenga reservaciones activas.']);
+            }
+            if ($classroom->status !== $data['status']) {
+                $classroom->forceFill(['maintenance_from_building' => false]);
+            }
+            $classroom->fill($data)->save();
+        }, 5);
 
         return Redirect::route('classrooms.index')
             ->with('success', 'Aula actualizada exitosamente.');
@@ -104,6 +125,9 @@ class ClassroomController extends Controller
      */
     public function destroy(Classroom $classroom): RedirectResponse
     {
+        if ($classroom->reservations()->exists()) {
+            return Redirect::route('classrooms.index')->with('error', 'No se puede eliminar el aula: conserva reservaciones e historial de llaves. Puedes ponerla en mantenimiento.');
+        }
         try {
             $classroom->delete();
         } catch (QueryException $e) {
@@ -123,22 +147,16 @@ class ClassroomController extends Controller
     /**
      * Exporta el catálogo de aulas/salones a un archivo Excel (.xlsx).
      */
-    public function export()
+    public function export(CatalogSpreadsheetService $spreadsheets)
     {
-        return Excel::download(new ClassroomExport, 'salones.xlsx');
+        return $spreadsheets->export(new ClassroomExport, 'salones.xlsx', 'Aulas');
     }
 
     /**
      * Importa aulas masivamente desde un archivo Excel o CSV.
      */
-    public function import(Request $request): RedirectResponse
+    public function import(Request $request, CatalogSpreadsheetService $spreadsheets): RedirectResponse
     {
-        $request->validate([
-            'file' => 'required|mimes:xlsx,csv,xls|max:2048'
-        ]);
-
-        Excel::import(new ClassroomImport, $request->file('file'));
-
-        return back()->with('success', '¡Salones importados exitosamente!');
+        return $spreadsheets->import($request, new ClassroomImport, 'Aulas');
     }
 }

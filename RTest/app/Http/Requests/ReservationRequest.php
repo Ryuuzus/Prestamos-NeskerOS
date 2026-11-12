@@ -21,7 +21,7 @@ use Illuminate\Validation\Validator;
  *  - Fecha y hora van separadas: start_date + start_time, end_date + end_time.
  *  - Anticipación mínima: el inicio debe ser al menos N días después de hoy
  *    (por defecto 7), lo que también impide reservar en el pasado.
- *  - Duración mínima (por defecto 24 horas). Los límites opcionales de anticipación máxima y de
+ *  - Duración mínima (por defecto 2 horas). Los límites opcionales de anticipación máxima y de
  *    duración máxima salen de config/reservations.php.
  *  - No se puede reservar un aula o dispositivo en mantenimiento.
  *  - No se puede reservar un recurso que ya tenga una reservación APROBADA que se cruce
@@ -61,13 +61,13 @@ class ReservationRequest extends FormRequest
                 'nullable',
                 'required_without:device_id',
                 'integer',
-                Rule::exists((new Classroom())->getTable(), 'id'),
+                Rule::exists((new Classroom)->getTable(), 'id'),
             ],
             'device_id' => [
                 'nullable',
                 'required_without:classroom_id',
                 'integer',
-                Rule::exists((new Device())->getTable(), 'id'),
+                Rule::exists((new Device)->getTable(), 'id'),
             ],
 
             // Unidades del dispositivo que se solicitan.
@@ -75,8 +75,8 @@ class ReservationRequest extends FormRequest
 
             'start_date' => ['required', 'date_format:Y-m-d'],
             'start_time' => ['required', 'date_format:H:i'],
-            'end_date'   => ['required', 'date_format:Y-m-d'],
-            'end_time'   => ['required', 'date_format:H:i'],
+            'end_date' => ['required', 'date_format:Y-m-d'],
+            'end_time' => ['required', 'date_format:H:i'],
         ];
     }
 
@@ -92,15 +92,15 @@ class ReservationRequest extends FormRequest
                 return;
             }
 
-            $start = Carbon::createFromFormat('Y-m-d H:i', $this->input('start_date') . ' ' . $this->input('start_time'));
-            $end   = Carbon::createFromFormat('Y-m-d H:i', $this->input('end_date') . ' ' . $this->input('end_time'));
+            $start = Carbon::createFromFormat('Y-m-d H:i', $this->input('start_date').' '.$this->input('start_time'));
+            $end = Carbon::createFromFormat('Y-m-d H:i', $this->input('end_date').' '.$this->input('end_time'));
 
-            $now         = now();
-            $minDays     = (int) config('reservations.min_days_in_advance', 7);
-            $minHours    = (int) config('reservations.min_duration_hours', 2);
-            $maxDays     = config('reservations.max_days_ahead');
+            $now = now();
+            $minDays = (int) config('reservations.min_days_in_advance', 7);
+            $minHours = (int) config('reservations.min_duration_hours', 2);
+            $maxDays = config('reservations.max_days_ahead');
             $maxDuration = config('reservations.max_duration_hours', 48);
-            $earliest    = $now->copy()->addDays($minDays);
+            $earliest = $now->copy()->addDays($minDays);
 
             // Anticipación mínima (esto también impide reservar en el pasado).
             if ($start->lt($earliest)) {
@@ -111,12 +111,12 @@ class ReservationRequest extends FormRequest
             }
 
             // Horario permitido: solo horas dentro de la jornada y en el paso configurado.
-            $open   = (int) config('reservations.open_hour', 7);
-            $close  = (int) config('reservations.close_hour', 21);
-            $slot   = max(5, (int) config('reservations.slot_minutes', 60));
-            $window = 'de ' . Carbon::createFromTime($open)->format('g:i A') . ' a ' . Carbon::createFromTime($close)->format('g:i A');
+            $open = (int) config('reservations.open_hour', 7);
+            $close = (int) config('reservations.close_hour', 21);
+            $slot = max(5, (int) config('reservations.slot_minutes', 60));
+            $window = 'de '.Carbon::createFromTime($open)->format('g:i A').' a '.Carbon::createFromTime($close)->format('g:i A');
 
-            foreach ([['start_time', 'inicio', $start], ['end_time', 'entrega', $end]] as [$field, $label, $moment]) {
+            foreach ([['start_time', 'inicio', $start], ['end_time', 'devolución', $end]] as [$field, $label, $moment]) {
                 $minute = $moment->hour * 60 + $moment->minute;
 
                 if ($minute < $open * 60 || $minute > $close * 60 || ($minute - $open * 60) % $slot !== 0) {
@@ -125,7 +125,7 @@ class ReservationRequest extends FormRequest
             }
 
             if ($end->lt($start->copy()->addHours($minHours))) {
-                $validator->errors()->add('end_date', 'La reservación debe durar al menos ' . $this->durationLabel($minHours) . '.');
+                $validator->errors()->add('end_date', 'La reservación debe durar al menos '.$this->durationLabel($minHours).'.');
             }
 
             // Límites opcionales (null en la configuración = sin límite).
@@ -134,7 +134,7 @@ class ReservationRequest extends FormRequest
             }
 
             if ($maxDuration !== null && $end->gt($start->copy()->addHours((int) $maxDuration))) {
-                $validator->errors()->add('end_date', 'La reservación no puede durar más de ' . $this->durationLabel((int) $maxDuration) . '.');
+                $validator->errors()->add('end_date', 'La reservación no puede durar más de '.$this->durationLabel((int) $maxDuration).'.');
             }
 
             // Si el horario ya es inválido no tiene caso revisar recursos.
@@ -154,8 +154,8 @@ class ReservationRequest extends FormRequest
     private function validateResources(Validator $validator, Carbon $start, Carbon $end): void
     {
         $routeParam = $this->route('reservation');
-        $ignoreId   = $routeParam instanceof Reservation ? $routeParam->getKey() : $routeParam;
-        $ignoreId   = $ignoreId ? (int) $ignoreId : null;
+        $ignoreId = $routeParam instanceof Reservation ? $routeParam->getKey() : $routeParam;
+        $ignoreId = $ignoreId ? (int) $ignoreId : null;
 
         $availability = app(AvailabilityService::class);
 
@@ -169,8 +169,8 @@ class ReservationRequest extends FormRequest
                 $validator->errors()->add(
                     'classroom_id',
                     "El aula «{$classroom->classroom}» ya tiene una reservación aprobada del "
-                    . $conflict->start_at->format('d/m/Y H:i') . ' al ' . $conflict->end_at->format('d/m/Y H:i')
-                    . ' que se cruza con el horario elegido.'
+                    .$conflict->start_at->format('d/m/Y H:i').' al '.$conflict->end_at->format('d/m/Y H:i')
+                    .' que se cruza con el horario elegido.'
                 );
             }
         }
@@ -208,36 +208,36 @@ class ReservationRequest extends FormRequest
         if ($hours % 24 === 0) {
             $days = intdiv($hours, 24);
 
-            return $days . ($days === 1 ? ' día' : ' días');
+            return $days.($days === 1 ? ' día' : ' días');
         }
 
-        return $hours . ($hours === 1 ? ' hora' : ' horas');
+        return $hours.($hours === 1 ? ' hora' : ' horas');
     }
 
     public function messages(): array
     {
         return [
             'classroom_id.required_without' => 'Debes elegir un aula o un dispositivo.',
-            'classroom_id.exists'           => 'El aula seleccionada no existe.',
-            'classroom_id.integer'          => 'El aula seleccionada no es válida.',
+            'classroom_id.exists' => 'El aula seleccionada no existe.',
+            'classroom_id.integer' => 'El aula seleccionada no es válida.',
 
             'device_id.required_without' => 'Debes elegir un aula o un dispositivo.',
-            'device_id.exists'           => 'El dispositivo seleccionado no existe.',
-            'device_id.integer'          => 'El dispositivo seleccionado no es válido.',
+            'device_id.exists' => 'El dispositivo seleccionado no existe.',
+            'device_id.integer' => 'El dispositivo seleccionado no es válido.',
 
             'device_quantity.required_with' => 'Indica cuántas unidades del dispositivo necesitas.',
-            'device_quantity.integer'       => 'La cantidad de unidades debe ser un número entero.',
-            'device_quantity.min'           => 'Debes pedir al menos 1 unidad.',
-            'device_quantity.max'           => 'La cantidad de unidades no puede ser mayor a 9999.',
+            'device_quantity.integer' => 'La cantidad de unidades debe ser un número entero.',
+            'device_quantity.min' => 'Debes pedir al menos 1 unidad.',
+            'device_quantity.max' => 'La cantidad de unidades no puede ser mayor a 9999.',
 
-            'start_date.required'    => 'La fecha de inicio es obligatoria.',
+            'start_date.required' => 'La fecha de inicio es obligatoria.',
             'start_date.date_format' => 'La fecha de inicio no es válida.',
-            'start_time.required'    => 'La hora de inicio es obligatoria.',
+            'start_time.required' => 'La hora de inicio es obligatoria.',
             'start_time.date_format' => 'La hora de inicio no es válida.',
 
-            'end_date.required'    => 'La fecha de entrega es obligatoria.',
+            'end_date.required' => 'La fecha de entrega es obligatoria.',
             'end_date.date_format' => 'La fecha de entrega no es válida.',
-            'end_time.required'    => 'La hora de entrega es obligatoria.',
+            'end_time.required' => 'La hora de entrega es obligatoria.',
             'end_time.date_format' => 'La hora de entrega no es válida.',
         ];
     }

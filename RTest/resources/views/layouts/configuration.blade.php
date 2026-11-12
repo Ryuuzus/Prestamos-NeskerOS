@@ -2,8 +2,10 @@
 
 @section('content')
 <div class="container py-4">
-    <h1 class="h3 mb-2">Ajustes de cuenta</h1>
-    <p class="text-muted mb-4">Consulta la información de tu cuenta y el nivel de acceso asignado.</p>
+    <div class="app-section-heading">
+        <h1 class="h3 mb-0">Ajustes de cuenta</h1>
+        <x-guide-button :href="route('help.account')" />
+    </div>
 
     @php
         $roleLabels = [

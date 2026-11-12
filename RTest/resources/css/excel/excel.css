@@ -1,11 +1,37 @@
-/* Estilos para el módulo de Excel de Dispositivos */
+.excel-page {
+    width: 100%;
+    max-width: 1200px;
+    margin-inline: auto;
+}
+
+.excel-page .excel-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.excel-card-heading {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+}
+
+.excel-card-icon {
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    color: #2563eb;
+    background: #eff6ff;
+    flex-shrink: 0;
+}
 
 .excel-title {
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: #374151;
-    text-align: center;
-    margin-bottom: 1rem;
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #344054;
 }
 
 .excel-form {
@@ -16,53 +42,95 @@
 
 .excel-label-text {
     display: block;
-    color: #374151;
     margin-bottom: 0.5rem;
+    color: #475467;
     font-size: 0.875rem;
 }
 
 .excel-input-file {
-    margin-top: 0.5rem;
     display: block;
     width: 100%;
-    padding: 0.5rem 0.75rem;
-    border: 1px solid #d1d5db;
-    border-radius: 0.5rem;
-    color: #374151;
-    background-color: #f9fafb;
+    min-width: 0;
+    padding: 0.75rem;
+    border: 1px dashed #cbd5e1;
+    border-radius: 0.6rem;
+    color: #475467;
+    background: #f8fafc;
+    font-size: 0.8rem;
+}
+
+.excel-input-file::file-selector-button {
+    padding: 0.4rem 0.6rem;
+    margin-right: 0.5rem;
+    border: 1px solid #d0d5dd;
+    border-radius: 0.35rem;
+    color: #344054;
+    background: #fff;
+    cursor: pointer;
+}
+
+.excel-form [data-file-feedback]:empty {
+    display: none;
+}
+
+.excel-btn-submit,
+.excel-template-link,
+.excel-page .excel-export-link {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.55rem;
+    min-height: 42px;
+    padding: 0.65rem 0.8rem;
+    border-radius: 0.6rem;
     font-size: 0.875rem;
+    font-weight: 700;
+    text-decoration: none;
 }
 
 .excel-btn-submit {
     width: 100%;
-    background-color: #2563eb;
-    color: #ffffff;
-    padding-top: 0.5rem;
-    padding-bottom: 0.5rem;
-    border: none;
-    border-radius: 0.5rem;
-    font-weight: 500;
+    border: 1px solid #2563eb;
+    color: #fff;
+    background: #2563eb;
     cursor: pointer;
-    transition: background-color 0.2s ease-in-out;
 }
 
 .excel-btn-submit:hover {
-    background-color: #1d4ed8;
+    background: #1d4ed8;
 }
 
-.excel-export-wrapper {
-    margin-top: 1rem;
-    text-align: center;
+.excel-template-link {
+    border: 1px solid #d0d5dd;
+    color: #344054;
+    background: #fff;
 }
 
-.excel-export-link {
+.excel-template-link:hover {
+    border-color: #93b4f9;
+    color: #1d4ed8;
+    background: #f8faff;
+}
+
+.excel-page .excel-export-link {
+    margin-top: auto;
+    border-color: transparent;
     color: #2563eb;
-    text-decoration: none;
+    background: #eff6ff;
+}
+
+.excel-page .excel-export-link:hover {
+    background: #dbeafe;
+}
+
+.excel-page .alert {
+    overflow-wrap: anywhere;
     font-size: 0.875rem;
 }
 
-.excel-export-link:hover {
-    text-decoration: underline;
+.excel-page :is(a, button, input):focus-visible {
+    outline: 3px solid #93b4f9;
+    outline-offset: 3px;
 }
 
 .alert-success {
@@ -73,14 +141,4 @@
     border-radius: 0.5rem;
     margin-bottom: 1rem;
     font-size: 0.875rem;
-}
-
-@media (max-width: 575.98px) {
-    .excel-container {
-        padding: 1.1rem;
-    }
-
-    .excel-input-file {
-        font-size: 0.8rem;
-    }
 }

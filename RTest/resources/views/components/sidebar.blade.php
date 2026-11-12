@@ -45,7 +45,7 @@
         </li>
         <li>
             <a href="{{ route('reservations.index') }}" class="nav-link {{ $dashboardActive ? 'active' : '' }}">
-                <i class="fa fa-chart-line fa-fw me-2"></i> Dashboard
+                <i class="fa fa-calendar-check fa-fw me-2" aria-hidden="true"></i> Mis reservaciones
             </a>
         </li>
         <li>
@@ -61,7 +61,7 @@
                 <span class="text-uppercase text-secondary small fw-bold" style="letter-spacing: .05em;">Moderación</span>
             </li>
             <li>
-                <a href="{{ route('admin.reservations.index') }}" class="nav-link {{ request()->routeIs('admin.reservations.index') ? 'active' : '' }}">
+                <a href="{{ route('admin.reservations.index') }}" class="nav-link {{ request()->routeIs('admin.reservations.index', 'reservations.operations') ? 'active' : '' }}">
                     <i class="fa fa-clipboard-check fa-fw me-2"></i> Gestionar solicitudes
                 </a>
             </li>

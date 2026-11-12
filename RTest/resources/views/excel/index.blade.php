@@ -1,129 +1,75 @@
-{{-- ==================================================================================================
-    DESCRIPCIÓN GENERAL:
-    Vista general de importación y exportación de archivos Excel/CSV (Excel Index View).
-    Proporciona formularios individuales de carga masiva de datos (import) y enlaces de descarga
-    directa (export) para los catálogos del sistema: Dispositivos, Edificios y Aulas/Salones.
---================================================================================================== --}}
-
 @extends('layouts.app')
 
-{{-- Contenido principal de la vista --}}
 @section('content')
-<div class="excel-main-container">
-    @cannot('import-data')
-        <p class="text-muted">Modo consulta: puedes exportar información a Excel. La importación está reservada al administrador.</p>
-    @endcannot
-
-    {{-- Notificaciones globales de la sesión (Éxito / Error / Validaciones) --}}
+@php
+    $catalogs = [
+        ['key' => 'devices', 'label' => 'Dispositivos', 'icon' => 'laptop'],
+        ['key' => 'buildings', 'label' => 'Edificios', 'icon' => 'building'],
+        ['key' => 'classrooms', 'label' => 'Aulas', 'icon' => 'door-open'],
+    ];
+@endphp
+<div class="excel-page">
+    <div class="app-section-heading">
+        <div>
+            <h1 class="app-page-title">Importar y exportar</h1>
+            <p class="app-page-subtitle">Excel o CSV · Máximo 2 MB · Los duplicados se omiten</p>
+        </div>
+        <x-guide-button :href="route('reports.excel.guide')" />
+    </div>
 
     @if(session('success'))
-        <div class="alert alert-success">
-            {{ session('success') }}
-        </div>
+        <div class="alert alert-success" role="status">{{ session('success') }}</div>
     @endif
-
     @if(session('error'))
-        <div class="alert alert-danger">
-            {{ session('error') }}
-        </div>
+        <div class="alert alert-danger" role="alert">{{ session('error') }}</div>
     @endif
 
-    @if($errors->any())
-        <div class="alert alert-danger">
-            <ul style="margin: 0; padding-left: 20px;">
-                @foreach($errors->all() as $error)
-                    <li>{{ $error }}</li>
+    <div class="excel-main-container">
+        @foreach($catalogs as $catalog)
+            <section class="excel-container" aria-labelledby="title-{{ $catalog['key'] }}">
+                <div class="excel-card-heading">
+                    <span class="excel-card-icon"><i class="fa-solid fa-{{ $catalog['icon'] }}" aria-hidden="true"></i></span>
+                    <h2 class="excel-title" id="title-{{ $catalog['key'] }}">{{ $catalog['label'] }}</h2>
+                </div>
+
+                @foreach(['import', 'export', 'template'] as $operation)
+                    @if($errors->getBag($operation.$catalog['label'])->any())
+                        <div class="alert alert-danger" role="alert">
+                            <ul class="mb-0 ps-3">
+                                @foreach($errors->getBag($operation.$catalog['label'])->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
                 @endforeach
-            </ul>
-        </div>
-    @endif
 
-    {{-- =================================================================-----------------------------
-        SECCIÓN 1: IMPORTACIÓN Y EXPORTACIÓN DE DISPOSITIVOS
-    --------------------------------------------------------------------------------------------------- --}}
-    <div class="excel-container">
-        <h2 class="excel-title">Importar y Exportar Dispositivos</h2>
+                @can('import-data')
+                    <a href="{{ route('catalogs.template', $catalog['key']) }}" class="excel-template-link"
+                       aria-label="Descargar plantilla vacía de {{ mb_strtolower($catalog['label']) }}">
+                        <i class="fa-regular fa-file-excel" aria-hidden="true"></i>Plantilla vacía
+                        <i class="fa-solid fa-download" aria-hidden="true"></i>
+                    </a>
+                    <form action="{{ route($catalog['key'].'.import') }}" method="POST" enctype="multipart/form-data" class="excel-form">
+                        @csrf
+                        <label for="file-{{ $catalog['key'] }}">
+                            <span class="excel-label-text">Archivo de {{ mb_strtolower($catalog['label']) }}</span>
+                            <input type="file" id="file-{{ $catalog['key'] }}" name="file" required accept=".xlsx,.xls,.csv"
+                                   data-max-bytes="2097152" aria-describedby="feedback-{{ $catalog['key'] }}" class="excel-input-file">
+                        </label>
+                        <p id="feedback-{{ $catalog['key'] }}" data-file-feedback class="text-danger small mb-0" aria-live="polite"></p>
+                        <button type="submit" class="excel-btn-submit" aria-label="Importar {{ mb_strtolower($catalog['label']) }}">
+                            <i class="fa-solid fa-arrow-up-from-bracket" aria-hidden="true"></i>Importar
+                        </button>
+                    </form>
+                @endcan
 
-        {{-- Formulario para la subida de archivos de Dispositivos --}}
-
-        @can('import-data')
-        <form action="{{ route('devices.import') }}" method="POST" enctype="multipart/form-data" class="excel-form">
-            @csrf
-            <label>
-                <span class="excel-label-text">Subir Archivo (.xlsx, .csv)</span>
-                <input type="file" name="file" required accept=".xlsx,.csv,.xls" class="excel-input-file">
-            </label>
-
-            <button type="submit" class="excel-btn-submit">
-                Importar Dispositivos
-            </button>
-        </form>
-        @endcan
-
-        {{-- Enlace para exportar la lista de Dispositivos --}}
-
-        <div class="excel-export-wrapper">
-            <a href="{{ route('devices.export') }}" class="excel-export-link">Exportar Dispositivos</a>
-        </div>
+                <a href="{{ route($catalog['key'].'.export') }}" class="excel-export-link"
+                   aria-label="Exportar {{ mb_strtolower($catalog['label']) }}">
+                    <i class="fa-solid fa-download" aria-hidden="true"></i>Exportar registros
+                </a>
+            </section>
+        @endforeach
     </div>
-
-    {{-- =================================================================-----------------------------
-        SECCIÓN 2: IMPORTACIÓN Y EXPORTACIÓN DE EDIFICIOS
-    --------------------------------------------------------------------------------------------------- --}}
-    <div class="excel-container">
-        <h2 class="excel-title">Importar y Exportar Edificios</h2>
-
-        {{-- Formulario para la subida de archivos de Edificios --}}
-
-        @can('import-data')
-        <form action="{{ route('buildings.import') }}" method="POST" enctype="multipart/form-data" class="excel-form">
-            @csrf
-            <label>
-                <span class="excel-label-text">Subir Archivo (.xlsx, .csv)</span>
-                <input type="file" name="file" required accept=".xlsx,.csv,.xls" class="excel-input-file">
-            </label>
-
-            <button type="submit" class="excel-btn-submit">
-                Importar Edificios
-            </button>
-        </form>
-        @endcan
-
-        {{-- Enlace para exportar la lista de Edificios --}}
-
-        <div class="excel-export-wrapper">
-            <a href="{{ route('buildings.export') }}" class="excel-export-link">Exportar Edificios</a>
-        </div>
-    </div>
-
-    {{-- =================================================================-----------------------------
-        SECCIÓN 3: IMPORTACIÓN Y EXPORTACIÓN DE AULAS / SALONES
-    --------------------------------------------------------------------------------------------------- --}}
-    <div class="excel-container">
-        <h2 class="excel-title">Importar y Exportar Aulas</h2>
-
-        {{-- Formulario para la subida de archivos de Aulas --}}
-
-        @can('import-data')
-        <form action="{{ route('classrooms.import') }}" method="POST" enctype="multipart/form-data" class="excel-form">
-            @csrf
-            <label>
-                <span class="excel-label-text">Subir Archivo (.xlsx, .csv)</span>
-                <input type="file" name="file" required accept=".xlsx,.csv,.xls" class="excel-input-file">
-            </label>
-
-            <button type="submit" class="excel-btn-submit">
-                Importar Aulas
-            </button>
-        </form>
-        @endcan
-
-        {{-- Enlace para exportar la lista de Aulas --}}
-
-        <div class="excel-export-wrapper">
-            <a href="{{ route('classrooms.export') }}" class="excel-export-link">Exportar Aulas</a>
-        </div>
-    </div>
-
 </div>
 @endsection

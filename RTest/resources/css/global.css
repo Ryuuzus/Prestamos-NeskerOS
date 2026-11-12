@@ -489,3 +489,175 @@ a {
         animation-iteration-count: 1 !important;
     }
 }
+
+/* Ayuda contextual: las guías se consultan en una página aparte. */
+.app-section-heading {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.75rem;
+}
+
+.app-section-heading .app-page-subtitle {
+    margin-bottom: 0;
+}
+
+.app-guide-button {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 36px;
+    padding: 0.45rem 0.7rem;
+    border: 1px solid #dbe4f0;
+    border-radius: 0.55rem;
+    color: #47607d;
+    background: #fff;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.app-guide-button:hover {
+    border-color: #93b4f9;
+    color: #1d4ed8;
+    background: #f8faff;
+}
+
+.app-guide-button:focus-visible {
+    outline: 3px solid #93b4f9;
+    outline-offset: 3px;
+}
+
+.app-guide-button .fa-arrow-up-right-from-square {
+    font-size: 0.65rem;
+    opacity: 0.75;
+}
+
+.catalog-heading {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.catalog-form-help {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 0.75rem;
+}
+
+.help-page {
+    max-width: 960px;
+    margin-inline: auto;
+}
+
+.help-panel {
+    margin-block: 1.25rem;
+    padding: clamp(1.1rem, 2.5vw, 1.75rem);
+    border: 1px solid var(--app-border);
+    border-radius: 0.9rem;
+    background: var(--app-surface);
+    scroll-margin-top: 1rem;
+}
+
+.help-panel h2,
+.help-steps h2 {
+    margin-bottom: 0.65rem;
+    color: var(--app-ink);
+    font-size: 1.05rem;
+    font-weight: 700;
+}
+
+.help-panel p,
+.help-steps p,
+.help-role-list dd {
+    color: var(--app-muted);
+    line-height: 1.65;
+    font-size: 0.9rem;
+}
+
+.help-panel > :last-child,
+.help-steps p {
+    margin-bottom: 0;
+}
+
+.help-panel .table {
+    font-size: 0.875rem;
+}
+
+.help-panel th,
+.help-panel td {
+    padding: 0.8rem 0.6rem;
+}
+
+.help-steps {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.25rem;
+    padding: 0;
+    margin: 0 0 1.75rem;
+    list-style: none;
+}
+
+.help-steps li {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+}
+
+.help-steps li > span {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+    color: #2563eb;
+    background: #e8efff;
+    font-weight: 700;
+}
+
+.help-section-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+}
+
+.help-section-links a {
+    padding: 0.5rem 0.85rem;
+    border: 1px solid #dbe4f0;
+    border-radius: 2rem;
+    color: #47607d;
+    background: #fff;
+    font-size: 0.875rem;
+    text-decoration: none;
+}
+
+.help-role-list > div + div {
+    margin-top: 1rem;
+}
+
+.help-role-list dt {
+    margin-bottom: 0.35rem;
+}
+
+@media (max-width: 575.98px) {
+    .help-steps {
+        grid-template-columns: 1fr;
+    }
+
+    .help-steps li {
+        flex-direction: row;
+    }
+
+    .help-steps li > span {
+        flex-shrink: 0;
+    }
+
+    .help-panel .table :is(th, td) {
+        overflow-wrap: anywhere;
+    }
+}

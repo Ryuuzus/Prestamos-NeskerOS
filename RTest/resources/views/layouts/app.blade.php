@@ -3,7 +3,7 @@
     Plantilla base o maquetación principal del sistema (Main Application Layout).
     Define la estructura HTML5 global, metadatos, carga de activos CSS/JS mediante Vite y CDN de Bootstrap,
     e integra modularmente la barra lateral (`includes.sidebar`), encabezado (`includes.header`),
-    área dinámica `@yield('content')` y pie de página (`includes.footer`).
+    área dinámica de contenido y pie de página.
 --================================================================================================== --}}
 
 
@@ -29,11 +29,12 @@
 
     {{-- Hojas de estilo personalizadas compiladas vía Vite (Tienen prioridad sobre Bootstrap) --}}
 
-    @vite(['resources/css/global.css'])
+    @vite(['resources/css/global.css', 'resources/js/form-validation.js'])
     @vite(['resources/css/crud/crud.css'])
     @vite(['resources/css/layouts/header.css'])
     @vite(['resources/css/layouts/sidebar.css'])
     @vite(['resources/css/excel/excel.css'])
+    @vite(['resources/css/reservations.css'])
     @stack('styles')
 
 </head>
@@ -61,6 +62,9 @@
             
             {{-- Inyección de vistas hijas dinámicas con padding y margen interno --}}
             <main class="flex-grow-1 container-fluid p-4">
+                @if($errors->getBag('search')->any())
+                    <div class="alert alert-danger" role="alert">{{ $errors->getBag('search')->first('search') }}</div>
+                @endif
                 @yield('content')
             </main>
 

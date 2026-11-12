@@ -27,6 +27,8 @@
     $invalid = fn ($field) => ($showErrors && $errors->has($field)) ? 'is-invalid' : '';
 @endphp
 
+<div class="catalog-form-help"><x-guide-button :href="route('help.catalogs').'#classrooms'" label="Guía de aulas" /></div>
+
 {{-- Resumen de errores de validación --}}
 @if($showErrors)
     <div class="validation-summary" role="alert">
@@ -53,7 +55,7 @@
         <option value="">-- {{ __('Select a Building') }} --</option>
         @foreach($buildings as $building)
             <option value="{{ $building->id }}"
-                    data-floors="{{ $building->floors }}"
+                    data-floors="{{ $building->floors }}" data-status="{{ $building->status }}"
                     {{ (string) $val('buildings_id', $classroom->buildings_id) === (string) $building->id ? 'selected' : '' }}>
                 {{ $building->name }}
             </option>
@@ -70,8 +72,9 @@
            class="form-control custom-input {{ $invalid('classroom') }}"
            value="{{ $val('classroom', $classroom->classroom) }}"
            placeholder="Ej: Casado"
-           maxlength="100"
+           maxlength="{{ \App\Rules\CatalogRules::NAME_MAX }}" pattern="{{ \App\Rules\CatalogRules::NAME_PATTERN }}" title="{{ \App\Rules\CatalogRules::NAME_HELP }}" data-catalog-name
            required>
+    <div class="form-text">Máximo 100 caracteres.</div>
 </div>
 
 {{-- Selección de Piso (poblado dinámicamente vía JS según el edificio seleccionado) --}}
@@ -98,5 +101,5 @@
         <option value="available"   {{ $currentStatus === 'available'   ? 'selected' : '' }}>{{ __('Available') }}</option>
         <option value="maintenance" {{ $currentStatus === 'maintenance' ? 'selected' : '' }}>{{ __('Maintenance') }}</option>
     </select>
-    <div class="form-text text-muted small mt-1">La ocupación del aula se calcula con las reservaciones aprobadas; aquí solo se marca el mantenimiento.</div>
+
 </div>

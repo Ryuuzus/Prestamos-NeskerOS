@@ -30,14 +30,14 @@
                 
                 {{-- Encabezado con título de sección, filtro de búsqueda y botón de creación --}}
                 <div class="table-header d-flex flex-wrap justify-content-between align-items-center gap-3">
-                    <h4 id="card_title" class="m-0">{{ __('Edificios') }}</h4>
+                    <div class="catalog-heading"><h4 id="card_title" class="m-0">{{ __('Edificios') }}</h4><x-guide-button :href="route('help.catalogs').'#buildings'" /></div>
                     
                     <div class="d-flex align-items-center gap-2 flex-grow-1 justify-content-md-end">
                         
                         {{-- Formulario de búsqueda rápida --}}
                         <form action="{{ route('buildings.index') }}" method="GET" class="m-0 d-flex" style="max-width: 300px; width: 100%;">
                             <div class="input-group">
-                                <input type="text" name="search" class="form-control custom-input" placeholder="Search..." value="{{ request('search') }}" style="border-top-right-radius: 0; border-bottom-right-radius: 0; height: 100%;">
+                                <input type="text" name="search" maxlength="{{ \App\Rules\CatalogRules::SEARCH_MAX }}" title="Máximo 100 caracteres" aria-label="Buscar, máximo 100 caracteres" class="form-control custom-input" placeholder="Search..." value="{{ request('search') }}" style="border-top-right-radius: 0; border-bottom-right-radius: 0; height: 100%;">
                                 <button type="submit" class="btn-submit" style="border-top-left-radius: 0; border-bottom-left-radius: 0; margin: 0; padding: 8px 16px;">
                                     Buscar
                                 </button>
@@ -112,10 +112,6 @@
                                     @endcan
                                 </tr>
                                 
-                                {{-- Inclusión de la vista parcial del modal de edición --}}
-                                @can('manage-catalogs')
-                                    @include('building.edit')
-                                @endcan
                             @endforeach
                         </tbody>
                     </table>
@@ -133,6 +129,9 @@
 
 {{-- Modal parcial para la creación de un nuevo edificio --}}
 @can('manage-catalogs')
+@foreach ($buildings as $building)
+    @include('building.edit')
+@endforeach
 @include('building.create', ['building' => new \App\Models\Building()])
 @endcan
 

@@ -36,13 +36,13 @@
 
                 {{-- Encabezado: título, buscador y botón Create --}}
                 <div class="table-header d-flex flex-wrap justify-content-between align-items-center gap-3">
-                    <h4 id="card_title" class="m-0">{{ __('Dispositivos') }}</h4>
+                    <div class="catalog-heading"><h4 id="card_title" class="m-0">{{ __('Dispositivos') }}</h4><x-guide-button :href="route('help.catalogs').'#devices'" /></div>
 
                     <div class="d-flex align-items-center gap-2 flex-grow-1 justify-content-md-end">
 
                         <form action="{{ route('devices.index') }}" method="GET" class="m-0 d-flex" style="max-width: 300px; width: 100%;">
                             <div class="input-group">
-                                <input type="text" name="search" class="form-control custom-input"
+                                <input type="text" name="search" maxlength="{{ \App\Rules\CatalogRules::SEARCH_MAX }}" title="Máximo 100 caracteres" aria-label="Buscar, máximo 100 caracteres" class="form-control custom-input"
                                        placeholder="Search..." value="{{ request('search') }}"
                                        style="border-top-right-radius: 0; border-bottom-right-radius: 0;">
                                 <button type="submit" class="btn-submit"

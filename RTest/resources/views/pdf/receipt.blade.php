@@ -23,6 +23,7 @@
 <body>
     <div class="no-print" style="margin-bottom: 18px;">
         <button onclick="window.print()" type="button">Imprimir</button>
+        <p class="muted"><a href="{{ route('reservations.guide') }}" target="_blank" rel="noopener noreferrer" title="Abre otra pestaña" aria-label="Consulta la guía de reservaciones">Guía de reservaciones ↗</a></p>
     </div>
     <div class="header">
         <div class="brand">NeskerOS</div>
@@ -30,7 +31,7 @@
         <div class="muted">Folio: #{{ $reservation->id }}</div>
     </div>
 
-    <p><span class="pill">{{ $reservation->status === 'completed' ? 'COMPLETADO' : 'APROBADO' }}</span></p>
+    <p><span class="pill">{{ $reservation->statusLabel() }}</span></p>
 
     <h2>Persona solicitante</h2>
     <table>
@@ -59,8 +60,19 @@
     <table>
         <tr><td>Fecha de inicio</td><td>{{ $reservation->start_at?->format('d/m/Y H:i') ?? 'No disponible' }}</td></tr>
         <tr><td>Devolución programada</td><td>{{ $reservation->end_at?->format('d/m/Y H:i') ?? 'No disponible' }}</td></tr>
+        @if($reservation->classroom_id)
+            <tr><td>Entrega de llave</td><td>{{ $reservation->key_issued_at?->format('d/m/Y H:i') ?? ($reservation->key_custody_unverified ? 'Por verificar' : 'No registrada') }}</td></tr>
+            <tr><td>Devolución de llave</td><td>{{ $reservation->key_returned_at?->format('d/m/Y H:i') ?? 'No registrada' }}</td></tr>
+        @endif
+        @if($reservation->device_id)
+            <tr><td>Entrega de equipos</td><td>{{ $reservation->devices_issued_at?->format('d/m/Y H:i') ?? ($reservation->devices_custody_unverified ? 'Por verificar' : 'No registrada') }}</td></tr>
+            <tr><td>Equipos devueltos</td><td>{{ $reservation->devices_returned }} de {{ $reservation->device_quantity }}</td></tr>
+        @endif
         @if($reservation->status === 'completed')
-            <tr><td>Entrega/devolución registrada</td><td>{{ $reservation->actual_return_time?->format('d/m/Y H:i') ?? 'No registrada' }}</td></tr>
+            <tr><td>Devolución final registrada</td><td>{{ $reservation->actual_return_time?->format('d/m/Y H:i') ?? 'No registrada' }}</td></tr>
+        @endif
+        @if($reservation->closure_reason)
+            <tr><td>Observación</td><td>{{ $reservation->closure_reason }}</td></tr>
         @endif
     </table>
 

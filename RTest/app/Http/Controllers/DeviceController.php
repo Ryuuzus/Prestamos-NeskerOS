@@ -2,16 +2,20 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\DeviceExport;
 use App\Http\Requests\DeviceRequest;
+use App\Imports\DeviceImport;
 use App\Models\Device;
+use App\Rules\DeviceQuantityCoversReservations;
+use App\Rules\NoActiveReservations;
+use App\Services\CatalogSpreadsheetService;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\View\View;
-use App\Exports\DeviceExport;
-use App\Imports\DeviceImport;
-use Maatwebsite\Excel\Facades\Excel;
 
 /**
  * ==================================================================================================
@@ -42,11 +46,11 @@ class DeviceController extends Controller
 
         // units_in_use = unidades en uso ahora (reservaciones aprobadas que ya iniciaron y no se han completado).
         $devices = Device::query()
-            ->withSum(['reservations as units_in_use' => fn ($query) => $query->approved()->started()], 'device_quantity')
+            ->withSum(['reservations as units_in_use' => fn ($query) => $query->devicesOutstanding()], DB::raw('device_quantity - devices_returned'))
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('name', 'LIKE', "%{$search}%")
-                      ->orWhere('serial_number', 'LIKE', "%{$search}%");
+                        ->orWhere('serial_number', 'LIKE', "%{$search}%");
                 });
             })
             ->orderBy('id')
@@ -97,7 +101,15 @@ class DeviceController extends Controller
      */
     public function update(DeviceRequest $request, Device $device): RedirectResponse
     {
-        $device->update($request->validated());
+        DB::transaction(function () use ($request, $device) {
+            $device = Device::lockForUpdate()->findOrFail($device->id);
+            $data = $request->validated();
+            Validator::make($data, [
+                'quantity' => [new DeviceQuantityCoversReservations($device)],
+                'status' => [new NoActiveReservations($device, 'device_id')],
+            ])->validate();
+            $device->update($data);
+        }, 5);
 
         return Redirect::route('devices.index')
             ->with('success', 'Dispositivo actualizado exitosamente.');
@@ -109,6 +121,9 @@ class DeviceController extends Controller
      */
     public function destroy(Device $device): RedirectResponse
     {
+        if ($device->reservations()->exists()) {
+            return Redirect::route('devices.index')->with('error', 'No se puede eliminar el equipo: conserva reservaciones e historial de préstamos. Puedes ponerlo en mantenimiento.');
+        }
         try {
             $device->delete();
         } catch (QueryException $e) {
@@ -128,22 +143,16 @@ class DeviceController extends Controller
     /**
      * Exporta los dispositivos a un archivo Excel (.xlsx).
      */
-    public function export()
+    public function export(CatalogSpreadsheetService $spreadsheets)
     {
-        return Excel::download(new DeviceExport, 'dispositivos.xlsx');
+        return $spreadsheets->export(new DeviceExport, 'dispositivos.xlsx', 'Dispositivos');
     }
 
     /**
      * Importa dispositivos masivamente desde un archivo Excel o CSV.
      */
-    public function import(Request $request): RedirectResponse
+    public function import(Request $request, CatalogSpreadsheetService $spreadsheets): RedirectResponse
     {
-        $request->validate([
-            'file' => 'required|mimes:xlsx,csv,xls|max:2048'
-        ]);
-
-        Excel::import(new DeviceImport, $request->file('file'));
-
-        return back()->with('success', '¡Dispositivos importados exitosamente!');
+        return $spreadsheets->import($request, new DeviceImport, 'Dispositivos');
     }
 }

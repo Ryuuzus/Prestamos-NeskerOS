@@ -40,7 +40,7 @@ class NoActiveReservations implements ValidationRule
             ->count();
 
         if ($count > 0) {
-            $fail("No se puede poner en mantenimiento: tiene {$count} reservación(es) aprobada(s) sin completar.");
+            $fail("Tiene {$count} reservación(es) aprobada(s) sin completar. Para una avería, usa «Reportar avería y suspender reservaciones» debajo del formulario.");
         }
     }
 }

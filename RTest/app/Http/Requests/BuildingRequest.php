@@ -2,7 +2,11 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Building;
+use App\Rules\CatalogRules;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class BuildingRequest extends FormRequest
 {
@@ -17,13 +21,39 @@ class BuildingRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
+        $building = $this->route('building');
+
         return [
-            'name' => 'required|string|max:100',
-            'floors' => 'required|integer|min:1',
+            'name' => [...CatalogRules::name(), Rule::unique('buildings', 'name')->ignore($building instanceof Building ? $building->id : null)],
+            'floors' => ['bail', 'required', 'integer', 'min:1', 'max:'.CatalogRules::FLOORS_MAX,
+                function (string $attribute, mixed $value, \Closure $fail) use ($building): void {
+                    if ($building instanceof Building && $building->classrooms()->where('floor', '>', $value)->exists()) {
+                        $fail('No puedes quitar pisos que todavía tienen aulas registradas. Reubica primero esas aulas.');
+                    }
+                },
+            ],
+            'status' => ['required', Rule::in(['available', 'maintenance'])],
         ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $building = $this->route('building');
+        $this->errorBag = $building instanceof Building ? 'editBuilding'.$building->id : 'createBuilding';
+        $this->merge(['name' => CatalogRules::normalize($this->input('name'))]);
+    }
+
+    public function messages(): array
+    {
+        return CatalogRules::messages();
+    }
+
+    public function attributes(): array
+    {
+        return ['name' => 'nombre del edificio', 'floors' => 'número de pisos', 'status' => 'estado'];
     }
 }

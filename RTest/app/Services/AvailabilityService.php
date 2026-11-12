@@ -9,23 +9,7 @@ use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
 
-/**
- * ==================================================================================================
- * DESCRIPCIÓN GENERAL:
- * Fuente única de disponibilidad de aulas y dispositivos.
- *
- * La ocupación NO se guarda en el aula ni en el dispositivo: se calcula con las reservaciones
- * APROBADAS que todavía no se han completado.
- *
- *  - Aula: está libre en un horario si ninguna reservación aprobada se cruza con él.
- *  - Dispositivo: tiene `quantity` unidades. En un horario hay disponibles
- *    `quantity - máximo de unidades usadas a la vez` por las reservaciones aprobadas que se cruzan.
- *    Con 10 unidades, prestar 1 deja 9 disponibles, y esas 9 siguen reservables.
- *
- * Las reservaciones PENDIENTES no bloquean nada; al aprobar se vuelve a validar.
- * Dos reservaciones que se tocan en el borde (una termina cuando empieza la otra) no se cruzan.
- * ==================================================================================================
- */
+/** Scheduled capacity and actual custody are tracked separately. Pending requests do not reserve capacity. */
 class AvailabilityService
 {
     /**
@@ -39,7 +23,7 @@ class AvailabilityService
     ): ?Reservation {
         return Reservation::query()
             ->approved()
-            ->where('classroom_id', $classroom->getKey())
+            ->where('classroom_id', $classroom->getKey())->whereNull('key_returned_at')->whereNull('key_released_at')
             ->when($ignoreReservationId, fn ($query) => $query->where('id', '<>', $ignoreReservationId))
             ->overlapping($start, $end)
             ->first();
@@ -56,7 +40,7 @@ class AvailabilityService
     ): int {
         $overlapping = Reservation::query()
             ->approved()
-            ->where('device_id', $device->getKey())
+            ->where('device_id', $device->getKey())->whereNull('devices_released_at')
             ->when($ignoreReservationId, fn ($query) => $query->where('id', '<>', $ignoreReservationId))
             ->overlapping($start, $end)
             ->get();
@@ -71,10 +55,9 @@ class AvailabilityService
     public function deviceUnitsInUseNow(Device $device): int
     {
         return (int) Reservation::query()
-            ->approved()
-            ->started()
-            ->where('device_id', $device->getKey())
-            ->sum('device_quantity');
+            ->devicesOutstanding()
+            ->where('device_id', $device->getKey())->whereNull('devices_released_at')
+            ->selectRaw('COALESCE(SUM(device_quantity - devices_returned), 0) as total')->value('total');
     }
 
     /**
@@ -83,9 +66,9 @@ class AvailabilityService
      */
     public function devicePeakCommitted(Device $device): int
     {
-        return $this->peakUsage(
-            Reservation::query()->approved()->where('device_id', $device->getKey())->get()
-        );
+        return max($this->deviceUnitsInUseNow($device), $this->peakUsage(
+            Reservation::query()->approved()->where('device_id', $device->getKey())->whereNull('devices_released_at')->get()
+        ));
     }
 
     /**
@@ -93,7 +76,7 @@ class AvailabilityService
      */
     public function classroomHasApprovedReservations(Classroom $classroom): bool
     {
-        return Reservation::query()->approved()->where('classroom_id', $classroom->getKey())->exists();
+        return Reservation::query()->approved()->where('classroom_id', $classroom->getKey())->whereNull('key_returned_at')->whereNull('key_released_at')->exists();
     }
 
     /**
@@ -113,12 +96,12 @@ class AvailabilityService
         $intervals = [];
 
         if ($classroom) {
-            if ($classroom->status === 'maintenance') {
+            if ($classroom->status === 'maintenance' || $classroom->building?->status === 'maintenance') {
                 $intervals[] = [Carbon::instance($from), Carbon::instance($to)];
             } else {
                 Reservation::query()
                     ->approved()
-                    ->where('classroom_id', $classroom->getKey())
+                    ->where('classroom_id', $classroom->getKey())->whereNull('key_returned_at')->whereNull('key_released_at')
                     ->overlapping($from, $to)
                     ->get()
                     ->each(function (Reservation $reservation) use (&$intervals) {
@@ -151,14 +134,14 @@ class AvailabilityService
 
         $reservations = Reservation::query()
             ->approved()
-            ->where('device_id', $device->getKey())
+            ->where('device_id', $device->getKey())->whereNull('devices_released_at')
             ->overlapping($from, $to)
             ->get();
 
         $events = [];
 
         foreach ($reservations as $reservation) {
-            $units = max(1, (int) $reservation->device_quantity);
+            $units = max(0, (int) $reservation->device_quantity - (int) $reservation->devices_returned);
 
             $events[] = [$reservation->start_at->getTimestamp(), 1, $units];
             $events[] = [$reservation->end_at->getTimestamp(), 0, -$units];
@@ -167,9 +150,9 @@ class AvailabilityService
         // A la misma hora, el final va antes que el inicio (reservaciones consecutivas no se cruzan).
         usort($events, fn ($a, $b) => $a[0] <=> $b[0] ?: $a[1] <=> $b[1]);
 
-        $timezone    = config('app.timezone');
-        $result      = [];
-        $current     = 0;
+        $timezone = config('app.timezone');
+        $result = [];
+        $current = 0;
         $blockedFrom = null;
 
         foreach ($events as [$moment, , $delta]) {
@@ -178,7 +161,7 @@ class AvailabilityService
             if ($current > $limit && $blockedFrom === null) {
                 $blockedFrom = $moment;
             } elseif ($current <= $limit && $blockedFrom !== null) {
-                $result[]    = [Carbon::createFromTimestamp($blockedFrom, $timezone), Carbon::createFromTimestamp($moment, $timezone)];
+                $result[] = [Carbon::createFromTimestamp($blockedFrom, $timezone), Carbon::createFromTimestamp($moment, $timezone)];
                 $blockedFrom = null;
             }
         }
@@ -223,7 +206,7 @@ class AvailabilityService
         $events = [];
 
         foreach ($reservations as $reservation) {
-            $quantity = max(1, (int) $reservation->device_quantity);
+            $quantity = max(0, (int) $reservation->device_quantity - (int) $reservation->devices_returned);
 
             // [momento, tipo (0 = fin, 1 = inicio), cambio]
             $events[] = [$reservation->start_at->getTimestamp(), 1, $quantity];
@@ -233,7 +216,7 @@ class AvailabilityService
         usort($events, fn ($a, $b) => $a[0] <=> $b[0] ?: $a[1] <=> $b[1]);
 
         $current = 0;
-        $peak    = 0;
+        $peak = 0;
 
         foreach ($events as [, , $delta]) {
             $current += $delta;

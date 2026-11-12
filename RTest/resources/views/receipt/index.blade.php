@@ -5,6 +5,7 @@
 <div class="container-fluid px-4 py-4">
     <div class="row justify-content-center">
         <div class="col-lg-11">
+            @include('reservation.guide-link')
             <div class="table-wrapper">
                 <div class="table-header d-flex flex-wrap justify-content-between align-items-center gap-3">
                     <div>
@@ -45,7 +46,7 @@
                                             'bg-success' => $reservation->status === 'approved',
                                             'bg-info text-dark' => $reservation->status === 'completed',
                                         ])>
-                                            {{ $reservation->status === 'approved' ? 'APROBADA' : 'COMPLETADA' }}
+                                            {{ $reservation->statusLabel() }}
                                         </span>
                                     </td>
                                     <td>

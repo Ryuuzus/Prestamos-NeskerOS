@@ -14,8 +14,10 @@
     $typeLabels = ['all' => 'Todos los recursos', 'classroom' => 'Solo aulas', 'device' => 'Solo dispositivos'];
     $phaseLabels = [
         'upcoming' => 'Programado',
-        'active' => 'En curso',
-        'overdue' => 'Devolución pendiente',
+        'active' => 'En préstamo',
+        'unverified' => 'Por verificar',
+        'uncollected' => 'Sin recoger',
+        'overdue' => 'Atrasado',
         'completed' => 'Completado',
     ];
     $agendaLink = fn ($date, $view = null, $kind = null) => route('agenda.index', [
@@ -26,11 +28,12 @@
     $today = today()->toDateString();
 @endphp
 
-<div class="container-fluid px-3 px-md-4 py-4 agenda-wrap">
+<div class="app-content reservation-page agenda-wrap">
     <div class="agenda-head">
         <div>
             <h3 class="fw-bold mb-1"><i class="fa fa-calendar-alt me-2" aria-hidden="true"></i>Agenda de préstamos</h3>
-            <p class="agenda-subtitle">Consulta cuándo están reservadas las aulas y las unidades de dispositivos. Visible para todos los roles.</p>
+            <p class="agenda-subtitle">Horarios de aulas y equipos.</p>
+            @include('reservation.guide-link')
         </div>
         <div class="agenda-controls" aria-label="Cambiar vista de agenda">
             <a href="{{ $agendaLink($selectedDate->toDateString(), 'day') }}" class="agenda-tool {{ $viewMode === 'day' ? 'is-selected' : '' }}" {{ $viewMode === 'day' ? 'aria-current=page' : '' }}>Día</a>
@@ -61,8 +64,8 @@
 
     <div class="agenda-legend" aria-label="Leyenda de la agenda">
         <span><i class="agenda-dot upcoming"></i>Programado</span>
-        <span><i class="agenda-dot active"></i>En curso</span>
-        <span><i class="agenda-dot overdue"></i>Devolución pendiente</span>
+        <span><i class="agenda-dot active"></i>En préstamo</span>
+        <span><i class="agenda-dot overdue"></i>Atrasado</span>
         <span><i class="agenda-dot completed"></i>Completado</span>
         <span><i class="fa fa-square text-primary" aria-hidden="true"></i> Aula</span>
         <span><i class="fa fa-square text-info" aria-hidden="true"></i> Dispositivo</span>
@@ -153,9 +156,6 @@
         </div>
     @endif
 
-    <p class="small text-muted mt-3 mb-0">
-        La agenda incluye reservaciones <strong>aprobadas y completadas</strong> que coinciden con el período seleccionado.
-        Las solicitudes pendientes o rechazadas no aparecen. Los horarios indican el intervalo reservado, no una confirmación física de entrega.
-    </p>
+    <p class="small text-muted mt-3 mb-0">Se muestran reservaciones aprobadas y completadas.</p>
 </div>
 @endsection

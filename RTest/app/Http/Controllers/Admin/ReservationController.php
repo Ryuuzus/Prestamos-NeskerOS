@@ -26,9 +26,7 @@ use Illuminate\View\View;
  */
 class ReservationController extends Controller
 {
-    public function __construct(private ReservationService $reservations)
-    {
-    }
+    public function __construct(private ReservationService $reservations) {}
 
     /**
      * Panel de reservaciones activas: pendientes y aprobadas.
@@ -36,12 +34,12 @@ class ReservationController extends Controller
     public function index(Request $request): View
     {
         $reservations = $this->baseQuery($request, [
-                Reservation::STATUS_PENDING,
-                Reservation::STATUS_APPROVED,
-            ])
+            Reservation::STATUS_PENDING,
+            Reservation::STATUS_APPROVED,
+        ])
             // Primero las pendientes; dentro de cada grupo, las que empiezan antes.
             ->orderByRaw("CASE status WHEN 'pending' THEN 0 ELSE 1 END")
-            ->orderByRaw('TIMESTAMP(start_date, start_time) ASC')
+            ->orderBy('start_date')->orderBy('start_time')
             ->paginate(10)
             ->withQueryString();
 
@@ -51,11 +49,12 @@ class ReservationController extends Controller
             ->pluck('total', 'status');
 
         return view('reservation.admin.index', [
-            'reservations'  => $reservations,
-            'pendingCount'  => (int) $counts->get(Reservation::STATUS_PENDING, 0),
+            'reservations' => $reservations,
+            'pendingCount' => (int) $counts->get(Reservation::STATUS_PENDING, 0),
             'approvedCount' => (int) $counts->get(Reservation::STATUS_APPROVED, 0),
-            'historyCount'  => (int) $counts->get(Reservation::STATUS_COMPLETED, 0)
-                             + (int) $counts->get(Reservation::STATUS_REJECTED, 0),
+            'historyCount' => (int) $counts->get(Reservation::STATUS_COMPLETED, 0)
+                             + (int) $counts->get(Reservation::STATUS_REJECTED, 0)
+                             + (int) $counts->get('cancelled', 0) + (int) $counts->get('expired', 0) + (int) $counts->get('no_show', 0),
         ]);
     }
 
@@ -65,8 +64,8 @@ class ReservationController extends Controller
      */
     public function history(Request $request): View
     {
-        $statuses = [Reservation::STATUS_COMPLETED, Reservation::STATUS_REJECTED];
-        $filter   = $request->input('status');
+        $statuses = Reservation::CLOSED_STATUSES;
+        $filter = $request->input('status');
 
         if (in_array($filter, $statuses, true)) {
             $statuses = [$filter];
@@ -75,7 +74,7 @@ class ReservationController extends Controller
         }
 
         $reservations = $this->baseQuery($request, $statuses)
-            ->orderByRaw('COALESCE(actual_return_time, updated_at) DESC')
+            ->orderByRaw('COALESCE(closed_at, actual_return_time, updated_at) DESC')
             ->paginate(15)
             ->withQueryString();
 
@@ -115,17 +114,11 @@ class ReservationController extends Controller
     }
 
     /**
-     * Registra la entrega/devolución y libera el aula/dispositivo.
+     * Las páginas antiguas llevan al formulario explícito de entregas y devoluciones.
      */
     public function complete(Reservation $reservation): RedirectResponse
     {
-        try {
-            $this->reservations->complete($reservation);
-        } catch (ReservationException $e) {
-            return back()->with('error', $e->getMessage());
-        }
-
-        return back()->with('success', 'El equipo o aula ha sido marcado como entregado/devuelto.');
+        return redirect()->route('reservations.operations', $reservation);
     }
 
     // ----------------------------------------------------------------------
@@ -148,8 +141,8 @@ class ReservationController extends Controller
 
             $query->where(function ($q) use ($search) {
                 $q->whereHas('user', fn ($u) => $u->where('name', 'LIKE', "%{$search}%"))
-                  ->orWhereHas('classroom', fn ($c) => $c->where('classroom', 'LIKE', "%{$search}%"))
-                  ->orWhereHas('device', fn ($d) => $d
+                    ->orWhereHas('classroom', fn ($c) => $c->where('classroom', 'LIKE', "%{$search}%"))
+                    ->orWhereHas('device', fn ($d) => $d
                         ->where('name', 'LIKE', "%{$search}%")
                         ->orWhere('serial_number', 'LIKE', "%{$search}%"));
             });

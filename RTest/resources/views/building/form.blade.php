@@ -43,6 +43,8 @@
     }
 @endphp
 
+<div class="catalog-form-help"><x-guide-button :href="route('help.catalogs').'#buildings'" label="Guía de edificios" /></div>
+
 {{-- Resumen de validación en la parte superior del formulario activo --}}
 @if($isActiveForm && $formErrors->any())
     <div class="validation-summary" role="alert" aria-live="polite">
@@ -65,10 +67,11 @@
         class="form-control custom-input {{ $isActiveForm && $formErrors->has('name') ? 'is-invalid' : '' }}"
         value="{{ $nameValue }}"
         placeholder="Enter building name"
-        maxlength="100"
+        maxlength="{{ \App\Rules\CatalogRules::NAME_MAX }}" pattern="{{ \App\Rules\CatalogRules::NAME_PATTERN }}" title="{{ \App\Rules\CatalogRules::NAME_HELP }}" data-catalog-name
         required
         @if($isActiveForm && $formErrors->has('name')) aria-invalid="true" @endif
     >
+    <div class="form-text">Máximo 100 caracteres.</div>
 </div>
 
 {{-- Campo numérico: Cantidad de Pisos --}}
@@ -80,11 +83,14 @@
         id="floors_{{ $fieldSuffix }}"
         class="form-control custom-input {{ $isActiveForm && $formErrors->has('floors') ? 'is-invalid' : '' }}"
         value="{{ $floorsValue }}"
-        placeholder="Number of floors"
-        min="1"
+        placeholder="De 1 a 100 pisos"
+        min="{{ max(1, (int) ($building->highest_classroom_floor ?? 1)) }}" max="{{ \App\Rules\CatalogRules::FLOORS_MAX }}" step="1"
         required
         @if($isActiveForm && $formErrors->has('floors')) aria-invalid="true" @endif
     >
+    @if(!$isCreateForm && ($building->highest_classroom_floor ?? 0) > 1)
+        <div class="form-text">Hay aulas hasta el piso {{ $building->highest_classroom_floor }}.</div>
+    @endif
 </div>
 
 {{-- Campo ENUM: Estado del edificio. Los valores deben coincidir exactamente con MySQL. --}}
@@ -106,12 +112,11 @@
     {{-- Aviso contextual sobre la relación con las aulas --}}
     @if($blockMaintenance)
         <div class="form-text text-muted small mt-1">
-            No se puede poner en mantenimiento: tiene {{ $reservedCount }} aula(s) con reservaciones aprobadas sin completar.
+            Hay reservaciones en {{ $reservedCount }} aula(s). Para mantenimiento, usa «Reportar avería».
         </div>
     @elseif(!$isCreateForm)
         <div class="form-text text-muted small mt-1">
-            Al poner el edificio en mantenimiento, todas sus aulas pasan a mantenimiento.
-            Al volver a disponible, sus aulas quedan disponibles.
+            El mantenimiento del edificio se aplica a todas sus aulas.
         </div>
     @endif
 </div>

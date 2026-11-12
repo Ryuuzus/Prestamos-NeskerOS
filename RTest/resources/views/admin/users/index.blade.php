@@ -2,17 +2,9 @@
 
 @section('content')
 <div class="container py-4">
-    <h1 class="h3 mb-3">Usuarios y roles</h1>
-    <p class="text-muted">Solo los administradores pueden cambiar roles. Los nuevos registros comienzan como Usuario.</p>
-    <div class="table-responsive mb-4">
-        <table class="table table-sm table-bordered">
-            <thead><tr><th>Rol</th><th>Permisos principales</th></tr></thead>
-            <tbody>
-                <tr><td>Usuario</td><td>Reservaciones propias.</td></tr>
-                <tr><td>Moderador</td><td>Reservaciones generales (aprobar, rechazar y completar), consulta de catálogos, historial y exportación Excel/PDF.</td></tr>
-                <tr><td>Administrador</td><td>Todos los permisos, modificación de catálogos, importación Excel y asignación de roles.</td></tr>
-            </tbody>
-        </table>
+    <div class="app-section-heading">
+        <h1 class="h3 mb-0">Usuarios y roles</h1>
+        <x-guide-button :href="route('help.account').'#roles'" label="Guía de roles" />
     </div>
 
     @if(session('success'))
@@ -23,7 +15,7 @@
     @endif
 
     <form action="{{ route('admin.users.index') }}" method="GET" class="row g-2 mb-3">
-        <div class="col-sm-8"><input type="search" name="search" value="{{ $search }}" class="form-control" placeholder="Buscar por nombre o correo"></div>
+        <div class="col-sm-8"><input type="search" name="search" maxlength="{{ \App\Rules\CatalogRules::SEARCH_MAX }}" title="Máximo 100 caracteres" aria-label="Buscar, máximo 100 caracteres" value="{{ $search }}" class="form-control" placeholder="Buscar por nombre o correo"></div>
         <div class="col-sm-4"><button type="submit" class="btn btn-primary">Buscar</button></div>
     </form>
 
@@ -35,7 +27,7 @@
                 <tr>
                     <td>{{ $user->name }} @if($user->is(auth()->user()))<span class="badge bg-secondary">Tú</span>@endif</td>
                     <td>{{ $user->email }}</td>
-                    <td>{{ ucfirst($user->role) }}</td>
+                    <td>{{ ['user' => 'Usuario', 'moderator' => 'Moderador', 'admin' => 'Administrador'][$user->role] ?? $user->role }}</td>
                     <td>
                         <form method="POST" action="{{ route('admin.users.role.update', $user) }}" class="d-flex gap-2">
                             @csrf

@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Models\Building;
 use App\Models\Classroom;
+use App\Rules\CatalogRules;
 use App\Rules\NoActiveReservations;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -38,7 +39,7 @@ class ClassroomRequest extends FormRequest
     {
         if ($this->has('classroom')) {
             $this->merge([
-                'classroom' => preg_replace('/\s+/', ' ', trim((string) $this->input('classroom'))),
+                'classroom' => CatalogRules::normalize($this->input('classroom')),
             ]);
         }
     }
@@ -48,38 +49,43 @@ class ClassroomRequest extends FormRequest
      */
     private function building(): ?Building
     {
-        return $this->selectedBuilding ??= Building::find($this->input('buildings_id'));
+        $id = $this->input('buildings_id');
+
+        return filter_var($id, FILTER_VALIDATE_INT) !== false
+            ? ($this->selectedBuilding ??= Building::find($id))
+            : null;
     }
 
     public function rules(): array
     {
         // Con binding implícito la ruta entrega el modelo; con ID plano entrega el valor.
-        $routeParam  = $this->route('classroom');
+        $routeParam = $this->route('classroom');
         $classroomId = $routeParam instanceof Classroom ? $routeParam->getKey() : $routeParam;
 
         return [
             'buildings_id' => [
+                'bail',
                 'required',
                 'integer',
-                Rule::exists((new Building())->getTable(), 'id'),
+                Rule::exists((new Building)->getTable(), 'id'),
             ],
 
             'classroom' => [
-                'required',
-                'string',
-                'max:100',
+                ...CatalogRules::name(),
                 // Único solo dentro de la combinación edificio + piso (ignora el aula que se está editando).
-                Rule::unique((new Classroom())->getTable(), 'classroom')
+                Rule::unique((new Classroom)->getTable(), 'classroom')
                     ->where(fn ($query) => $query
-                        ->where('buildings_id', $this->input('buildings_id'))
-                        ->where('floor', $this->input('floor')))
+                        ->where('buildings_id', is_scalar($this->input('buildings_id')) ? $this->input('buildings_id') : null)
+                        ->where('floor', is_scalar($this->input('floor')) ? $this->input('floor') : null))
                     ->ignore($classroomId),
             ],
 
             'floor' => [
+                'bail',
                 'required',
                 'integer',
                 'min:1',
+                'max:'.CatalogRules::FLOORS_MAX,
                 // El piso no puede superar los pisos que tiene el edificio.
                 function (string $attribute, mixed $value, \Closure $fail) {
                     $building = $this->building();
@@ -91,6 +97,7 @@ class ClassroomRequest extends FormRequest
             ],
 
             'status' => [
+                'bail',
                 'required',
                 Rule::in(['available', 'maintenance']),
                 // No se puede poner en mantenimiento un aula con reservaciones aprobadas sin completar.
@@ -111,20 +118,22 @@ class ClassroomRequest extends FormRequest
     {
         return [
             'buildings_id.required' => 'Debes seleccionar un edificio.',
-            'buildings_id.integer'  => 'El edificio seleccionado no es válido.',
-            'buildings_id.exists'   => 'El edificio seleccionado no existe.',
+            'buildings_id.integer' => 'El edificio seleccionado no es válido.',
+            'buildings_id.exists' => 'El edificio seleccionado no existe.',
 
             'classroom.required' => 'El nombre del aula es obligatorio.',
-            'classroom.string'   => 'El nombre del aula debe ser texto.',
-            'classroom.max'      => 'El nombre del aula no puede superar los 100 caracteres.',
-            'classroom.unique'   => 'Ya existe un aula con ese nombre en este piso del edificio seleccionado.',
+            'classroom.string' => 'El nombre del aula debe ser texto.',
+            'classroom.max' => 'El nombre del aula no puede superar los 100 caracteres.',
+            'classroom.regex' => CatalogRules::NAME_HELP,
+            'classroom.unique' => 'Ya existe un aula con ese nombre en este piso del edificio seleccionado.',
 
             'floor.required' => 'Debes seleccionar un piso.',
-            'floor.integer'  => 'El piso seleccionado no es válido.',
-            'floor.min'      => 'El piso debe ser mayor o igual a 1.',
+            'floor.integer' => 'El piso seleccionado no es válido.',
+            'floor.min' => 'El piso debe ser mayor o igual a 1.',
+            'floor.max' => 'El piso no puede ser mayor a 100.',
 
             'status.required' => 'Debes seleccionar un estado.',
-            'status.in'       => 'El estado seleccionado no es válido.',
+            'status.in' => 'El estado seleccionado no es válido.',
         ];
     }
 }

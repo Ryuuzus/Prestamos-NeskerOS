@@ -2,16 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\BuildingExport;
+use App\Http\Requests\BuildingRequest;
+use App\Imports\BuildingImport;
 use App\Models\Building;
 use App\Services\BuildingStatusService;
+use App\Services\CatalogSpreadsheetService;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\View\View;
-use App\Exports\BuildingExport;
-use App\Imports\BuildingImport;
-use Maatwebsite\Excel\Facades\Excel;
 
 /**
  * ==================================================================================================
@@ -33,12 +34,13 @@ class BuildingController extends Controller
      */
     public function index(Request $request): View
     {
-        $search = $request->input('search');
+        $search = $request->input('search', '');
 
         $buildings = Building::withCount([
-                'classrooms as reserved_classrooms_count' => fn ($query) => $query->whereHas('reservations', fn ($r) => $r->approved()),
-            ])
-            ->when($search, function ($query, $search) {
+            'classrooms as reserved_classrooms_count' => fn ($query) => $query->whereHas('reservations', fn ($r) => $r->approved()),
+        ])
+            ->withMax('classrooms as highest_classroom_floor', 'floor')
+            ->when($search !== '', function ($query) use ($search) {
                 return $query->where(function ($builder) use ($search) {
                     $builder->where('name', 'LIKE', "%{$search}%")
                         ->orWhere('status', 'LIKE', "%{$search}%");
@@ -51,26 +53,18 @@ class BuildingController extends Controller
     /**
      * Muestra el formulario para crear un nuevo edificio.
      */
-    public function create(): View
+    public function create(): RedirectResponse
     {
-        $building = new Building();
-
-        return view('building.create', compact('building'));
+        return redirect()->route('buildings.index');
     }
 
     /**
      * Almacena un nuevo edificio en la base de datos validando los datos recibidos.
      * Un edificio nuevo no tiene aulas, por lo que no hay nada que sincronizar.
      */
-    public function store(Request $request): RedirectResponse
+    public function store(BuildingRequest $request): RedirectResponse
     {
-        $validated = $request->validateWithBag('createBuilding', [
-            'name'   => 'required|string|max:100|unique:buildings,name',
-            'floors' => 'required|integer|min:1',
-            'status' => 'required|in:available,maintenance',
-        ]);
-
-        Building::create($validated);
+        Building::create($request->validated());
 
         return redirect()->route('buildings.index')->with('success', 'Edificio creado exitosamente.');
     }
@@ -90,9 +84,9 @@ class BuildingController extends Controller
     /**
      * Muestra el formulario para editar un edificio existente.
      */
-    public function edit(Building $building): View
+    public function edit(Building $building): RedirectResponse
     {
-        return view('building.edit', compact('building'));
+        return redirect()->route('buildings.index');
     }
 
     /**
@@ -100,13 +94,9 @@ class BuildingController extends Controller
      *  - a mantenimiento: se bloquea si hay aulas ocupadas; si no, todas sus aulas pasan a mantenimiento.
      *  - a disponible: sus aulas vuelven a disponible.
      */
-    public function update(Request $request, Building $building, BuildingStatusService $statusService): RedirectResponse
+    public function update(BuildingRequest $request, Building $building, BuildingStatusService $statusService): RedirectResponse
     {
-        $validated = $request->validateWithBag('editBuilding' . $building->id, [
-            'name'   => 'required|string|max:100|unique:buildings,name,' . $building->id,
-            'floors' => 'required|integer|min:1',
-            'status' => 'required|in:available,maintenance',
-        ]);
+        $validated = $request->validated();
 
         // Lanza ValidationException (con el bag del modal correcto) si hay aulas ocupadas.
         $affected = $statusService->update($building, $validated);
@@ -127,7 +117,17 @@ class BuildingController extends Controller
      */
     public function destroy(Building $building): RedirectResponse
     {
-        $building->delete();
+        if ($building->classrooms()->whereHas('reservations')->exists()) {
+            return Redirect::route('buildings.index')->with('error', 'No se puede eliminar el edificio: sus aulas conservan reservaciones e historial de llaves.');
+        }
+        try {
+            $building->delete();
+        } catch (QueryException $e) {
+            if ($e->getCode() === '23000') {
+                return Redirect::route('buildings.index')->with('error', 'No se puede eliminar el edificio: sus aulas tienen reservaciones asociadas.');
+            }
+            throw $e;
+        }
 
         return Redirect::route('buildings.index')
             ->with('success', 'Edificio eliminado exitosamente.');
@@ -136,22 +136,16 @@ class BuildingController extends Controller
     /**
      * Exporta el catálogo de edificios a un archivo Excel (.xlsx).
      */
-    public function export()
+    public function export(CatalogSpreadsheetService $spreadsheets)
     {
-        return Excel::download(new BuildingExport, 'edificios.xlsx');
+        return $spreadsheets->export(new BuildingExport, 'edificios.xlsx', 'Edificios');
     }
 
     /**
      * Importa edificios masivamente desde un archivo Excel o CSV.
      */
-    public function import(Request $request): RedirectResponse
+    public function import(Request $request, CatalogSpreadsheetService $spreadsheets): RedirectResponse
     {
-        $request->validate([
-            'file' => 'required|mimes:xlsx,csv,xls|max:2048'
-        ]);
-
-        Excel::import(new BuildingImport, $request->file('file'));
-
-        return back()->with('success', '¡Edificios importados exitosamente!');
+        return $spreadsheets->import($request, new BuildingImport, 'Edificios');
     }
 }

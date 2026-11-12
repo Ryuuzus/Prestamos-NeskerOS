@@ -15,7 +15,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
 
-            <form method="POST" action="{{ route('classrooms.update', $classroom->id) }}" novalidate>
+            <form method="POST" action="{{ route('classrooms.update', $classroom->id) }}">
                 @csrf
                 @method('PATCH')
 
@@ -33,6 +33,7 @@
                     <button type="submit" class="btn-submit">{{ __('Update') }}</button>
                 </div>
             </form>
+            @include('components.emergency-maintenance', ['type' => 'classroom', 'resource' => $classroom])
 
         </div>
     </div>

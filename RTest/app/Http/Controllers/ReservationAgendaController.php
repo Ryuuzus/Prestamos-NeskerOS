@@ -5,8 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Reservation;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\View\View;
 use Illuminate\Validation\Rule;
+use Illuminate\View\View;
 
 /**
  * Agenda compartida de recursos prestados/reservados.
@@ -38,7 +38,7 @@ class ReservationAgendaController extends Controller
             $to = $from->copy()->addDay();
             $prevDate = $selectedDate->copy()->subDay()->toDateString();
             $nextDate = $selectedDate->copy()->addDay()->toDateString();
-            $periodTitle = ucfirst($selectedDate->copy()->locale('es')->translatedFormat('l d')) . ' de ' . $selectedDate->copy()->locale('es')->translatedFormat('F Y');
+            $periodTitle = ucfirst($selectedDate->copy()->locale('es')->translatedFormat('l d')).' de '.$selectedDate->copy()->locale('es')->translatedFormat('F Y');
         } elseif ($viewMode === 'month') {
             $from = $selectedDate->copy()->startOfMonth()->startOfWeek(Carbon::MONDAY);
             $to = $selectedDate->copy()->endOfMonth()->endOfWeek(Carbon::SUNDAY)->addDay()->startOfDay();
@@ -50,7 +50,7 @@ class ReservationAgendaController extends Controller
             $to = $from->copy()->addWeek();
             $prevDate = $selectedDate->copy()->subWeek()->toDateString();
             $nextDate = $selectedDate->copy()->addWeek()->toDateString();
-            $periodTitle = $from->format('d/m/Y') . ' – ' . $to->copy()->subDay()->format('d/m/Y');
+            $periodTitle = $from->format('d/m/Y').' – '.$to->copy()->subDay()->format('d/m/Y');
         }
 
         $query = Reservation::query()
@@ -91,30 +91,26 @@ class ReservationAgendaController extends Controller
             }
 
             $resources = [];
-            if ($type !== 'device' && $reservation->classroom) {
+            if ($type !== 'device' && $reservation->classroom && ! $reservation->key_released_at) {
                 $resources[] = [
                     'kind' => 'classroom',
                     'title' => $reservation->classroom->classroom,
                     'detail' => $reservation->classroom->building?->name
-                        ? $reservation->classroom->building->name . ' · Piso ' . $reservation->classroom->floor
-                        : 'Aula · Piso ' . $reservation->classroom->floor,
+                        ? $reservation->classroom->building->name.' · Piso '.$reservation->classroom->floor
+                        : 'Aula · Piso '.$reservation->classroom->floor,
                     'count' => null,
                 ];
                 $stats['classrooms']++;
             }
-            if ($type !== 'classroom' && $reservation->device) {
+            if ($type !== 'classroom' && $reservation->device && ! $reservation->devices_released_at) {
                 $resources[] = [
                     'kind' => 'device',
                     'title' => $reservation->device->name,
-                    'detail' => 'Equipo · ' . (int) $reservation->device_quantity . ' unidad(es)',
+                    'detail' => 'Equipo · '.(int) $reservation->device_quantity.' unidad(es)'.($reservation->devices_issued_at ? ' · '.$reservation->devices_returned.' devuelta(s)' : ''),
                     'count' => (int) $reservation->device_quantity,
                 ];
                 $stats['devices']++;
             }
-
-            $phase = $reservation->status === Reservation::STATUS_COMPLETED
-                ? 'completed'
-                : ($start->gt($now) ? 'upcoming' : ($end->lte($now) ? 'overdue' : 'active'));
 
             // Una reserva que dura varios días figura en CADA día afectado.
             $firstDay = $start->gt($from) ? $start->copy()->startOfDay() : $from->copy();
@@ -127,10 +123,18 @@ class ReservationAgendaController extends Controller
                 if ($dayStart->gte($dayEnd)) {
                     continue;
                 }
-                $timeText = $dayStart->format('H:i') . ' – '
-                    . ($dayEnd->equalTo($tomorrow) ? '24:00' : $dayEnd->format('H:i'));
+                $timeText = $dayStart->format('H:i').' – '
+                    .($dayEnd->equalTo($tomorrow) ? '24:00' : $dayEnd->format('H:i'));
 
                 foreach ($resources as $resource) {
+                    $part = $resource['kind'] === 'classroom' ? 'key' : 'devices';
+                    $returned = $reservation->{$part.'_returned_at'};
+                    $issued = $reservation->{$part.'_issued_at'};
+                    $phase = $reservation->status === Reservation::STATUS_COMPLETED || $returned
+                        ? 'completed'
+                        : ($reservation->{$part.'_custody_unverified'} ? 'unverified'
+                            : ($issued ? ($end->lte($now) ? 'overdue' : 'active')
+                                : ($end->lte($now) ? 'uncollected' : 'upcoming')));
                     $eventsByDay[$key][] = $resource + [
                         'time' => $timeText,
                         'startAt' => $start->format('d/m/Y H:i'),
